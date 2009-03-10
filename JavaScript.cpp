@@ -52,7 +52,7 @@ static Handle<Value> LogCallback(const Arguments& args) {
 
 
 // Execute the script and fetch the Process method.
-bool JsHttpRequestProcessor::Initialize(string* output) {
+bool JsHttpRequestProcessor::Initialize(string* output, *SQL) {
   // Create a handle scope to hold the temporary references.
   HandleScope handle_scope;
 
@@ -60,6 +60,7 @@ bool JsHttpRequestProcessor::Initialize(string* output) {
   // built-in global functions.
   Handle<ObjectTemplate> global = ObjectTemplate::New();
   global->Set(String::New("log"), FunctionTemplate::New(LogCallback));
+  global->set(String::New("sql_insert"), FunctionTemplate::New(SQL->Insert));
 
   // Each processor gets its own context so different processors
   // don't affect each other (ignore the first three lines).

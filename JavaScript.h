@@ -9,6 +9,7 @@ using namespace std;
 using namespace v8;
 
 class HttpRequest;
+class SQLite;
 
 /**
  * An http request processor that is scriptable using JavaScript.
@@ -21,7 +22,7 @@ class JsHttpRequestProcessor {
   explicit JsHttpRequestProcessor(Handle<String> script) : script_(script) { }
   ~JsHttpRequestProcessor();
 
-  bool Initialize(string* output);
+  bool Initialize(string* output, SQLite* SQL);
   bool Process(HttpRequest* req);
   
   static void Log(const char* event);

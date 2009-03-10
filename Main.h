@@ -10,6 +10,8 @@
 struct sqlite3;
 struct MHD_Daemon;
 
+class SQLite;
+
 class Main {
 	public:
 		Main(){};
@@ -24,7 +26,7 @@ class Main {
 		static bool RunScript(const std::string &fragment, int *status, std::string *text);
 		
 		static boost::filesystem::path base;
-		sqlite3 *db;
+		static SQLite* SQL;
 		MHD_Daemon *server;
 };
 #endif

@@ -10,7 +10,7 @@ class SQLite() {
 		SQLite() { }
 		~SQLite();
 		
-		bool Initialize(const char *filename
+		bool Initialize(const char *filename);
 		
 		std::string[][] Select(std::string &query);
 		bool Insert(std::string &query);

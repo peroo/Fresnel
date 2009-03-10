@@ -6,7 +6,7 @@ SQLite::~SQLite()
 	sqlite3_close(db);
 }
 
-SQLite::Initialize(const char *filename)
+bool SQLite::Initialize(const char *filename)
 {
 	if(sqlite3_open(filename, &db) != SQLITE_OK) {
 		return false;

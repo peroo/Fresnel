@@ -1,6 +1,7 @@
 #include "Main.h"
 #include "JavaScript.h"
 #include "HttpRequest.h"
+#include "SQLite.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -58,21 +59,16 @@ bool Main::RunScript(const string &fragment, int *status, string *text) {
 	  return 1;
 	}
 	
-	JsHttpRequestProcessor *processor =  new JsHttpRequestProcessor(source);
+	JsHttpRequestProcessor *processor =  new JsHttpRequestProcessor(source, Main::SQL);
 	
 	string output; 
 	if (!processor->Initialize(&output)) {
 	  fprintf(stderr, "Error initializing processor.\n");
+	  delete processor;
 	  return 1;
 	}
-	/*
-	HttpRequest *req = new HttpRequest("test", "test2", "test3", "test4");
-  
-	if (!processor->Process(req))
-	  return 1;
-	
+
 	delete processor;
-	delete req;*/
 	
 	*text = output;
 	*status = 200;
@@ -147,11 +143,10 @@ bool Main::Initialize() {
 	chdir(Main::base.directory_string().c_str());
 	
 	// Init SQLite
-	const char *dbName = "database.db";
-  
-	if(sqlite3_open(dbName, &db)) {
-		sqlite3_close(db);
-		return false;
+	SQLite *SQL = new SQLite();
+	if(!SQL.Initialize("database.db")) {
+	  cout << "SQL initialization failed." << endl;
+	  return false;
 	}
 	
 	// Init MHD

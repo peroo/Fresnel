@@ -1,28 +1,34 @@
 #ifndef HTTPREQUEST_H
 #define HTTPREQUEST_H
 
+#include <sys/socket.h>
+#include <cstdio>
+#include <stdint.h>
+#include <microhttpd.h>
 #include <string>
+#include <map>
 
 
 /**
  * A simplified http request.
  */
 class HttpRequest {
- public:
-  HttpRequest(const std::string& path,
-              const std::string& referrer,
-              const std::string& host,
-              const std::string& user_agent);
-  ~HttpRequest() { }
-  virtual const std::string& Path() { return path_; }
-  virtual const std::string& Referrer() { return referrer_; }
-  virtual const std::string& Host() { return host_; }
-  virtual const std::string& UserAgent() { return user_agent_; }
- private:
-  std::string path_;
-  std::string referrer_;
-  std::string host_;
-  std::string user_agent_;
+    public:
+        HttpRequest(struct MHD_Connection*, const char *, const char *);
+        ~HttpRequest(){}
+
+        int Process();
+    private:
+        MHD_Connection* connection;
+
+        const char *url;
+        const char *method;
+        std::string referrer;
+        std::string host;
+        std::string user_agent;
+        std::map<const char *, const char *> headers;
+
+        static int headerIterator(void *, enum MHD_ValueKind, const char *, const char *);
 };
 
 #endif

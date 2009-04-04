@@ -1,31 +1,6 @@
-// Copyright 2008 the V8 project authors. All rights reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//     * Neither the name of Google Inc. nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "JavaScript.h"
+#include "JSDatabase.h"
 #include "HttpRequest.h"
 
 #include <v8.h>
@@ -51,8 +26,29 @@ static Handle<Value> LogCallback(const Arguments& args) {
 }
 
 
+// Reads a file into a v8 string.
+v8::Handle<v8::String> ReadFile(const string& name) {
+  FILE* file = fopen(name.c_str(), "rb");
+  if (file == NULL) return v8::Handle<v8::String>();
+
+  fseek(file, 0, SEEK_END);
+  int size = ftell(file);
+  rewind(file);
+
+  char* chars = new char[size + 1];
+  chars[size] = '\0';
+  for (int i = 0; i < size;) {
+    int read = fread(&chars[i], 1, size - i, file);
+    i += read;
+  }
+  fclose(file);
+  v8::Handle<v8::String> result = v8::String::New(chars, size);
+  delete[] chars;
+  return result;
+}
+
 // Execute the script and fetch the Process method.
-bool JsHttpRequestProcessor::Initialize(string* output, *SQL) {
+bool JsHttpRequestProcessor::Initialize(string* output) {
   // Create a handle scope to hold the temporary references.
   HandleScope handle_scope;
 
@@ -60,16 +56,19 @@ bool JsHttpRequestProcessor::Initialize(string* output, *SQL) {
   // built-in global functions.
   Handle<ObjectTemplate> global = ObjectTemplate::New();
   global->Set(String::New("log"), FunctionTemplate::New(LogCallback));
-  global->set(String::New("sql_insert"), FunctionTemplate::New(SQL->Insert));
+
+  Handle<ObjectTemplate> sql = ObjectTemplate::New();
+  sql->Set(String::New("insert"), FunctionTemplate::New(JSDatabase::Insert));
+  sql->Set(String::New("select"), FunctionTemplate::New(JSDatabase::Select));
+  sql->Set(String::New("update"), FunctionTemplate::New(JSDatabase::Update));
+  sql->Set(String::New("delete"), FunctionTemplate::New(JSDatabase::Delete));
+
+  global->Set(String::New("SQL"), sql);
+
 
   // Each processor gets its own context so different processors
   // don't affect each other (ignore the first three lines).
   Handle<Context> context = Context::New(NULL, global);
-
-  // Store the context in the processor object in a persistent handle,
-  // since we want the reference to remain after we return from this
-  // method.
-  context_ = Persistent<Context>::New(context);
 
   // Enter the new context so all the following operations take place
   // within it.
@@ -93,7 +92,7 @@ bool JsHttpRequestProcessor::Initialize(string* output, *SQL) {
 
   // It is a function; cast it to a Function
   Handle<String> output_string = Handle<String>::Cast(output_val);
-  
+
   *output = *(String::Utf8Value(output_string));
 
   // All done; all went well
@@ -224,7 +223,8 @@ Handle<Value> JsHttpRequestProcessor::GetPath(Local<String> name,
   HttpRequest* request = UnwrapRequest(info.Holder());
 
   // Fetch the path.
-  const string& path = request->Path();
+  //const string& path = request->Path();
+  const string& path = "test";
 
   // Wrap the result in a JavaScript string and return it.
   return String::New(path.c_str(), path.length());
@@ -234,7 +234,8 @@ Handle<Value> JsHttpRequestProcessor::GetPath(Local<String> name,
 Handle<Value> JsHttpRequestProcessor::GetReferrer(Local<String> name,
                                                   const AccessorInfo& info) {
   HttpRequest* request = UnwrapRequest(info.Holder());
-  const string& path = request->Referrer();
+  //const string& path = request->Referrer();
+  const string& path = "test";
   return String::New(path.c_str(), path.length());
 }
 
@@ -242,7 +243,8 @@ Handle<Value> JsHttpRequestProcessor::GetReferrer(Local<String> name,
 Handle<Value> JsHttpRequestProcessor::GetHost(Local<String> name,
                                               const AccessorInfo& info) {
   HttpRequest* request = UnwrapRequest(info.Holder());
-  const string& path = request->Host();
+  //const string& path = request->Host();
+  const string& path = "test";
   return String::New(path.c_str(), path.length());
 }
 
@@ -250,7 +252,8 @@ Handle<Value> JsHttpRequestProcessor::GetHost(Local<String> name,
 Handle<Value> JsHttpRequestProcessor::GetUserAgent(Local<String> name,
                                                    const AccessorInfo& info) {
   HttpRequest* request = UnwrapRequest(info.Holder());
-  const string& path = request->UserAgent();
+  //const string& path = request->UserAgent();
+  const string& path = "test";
   return String::New(path.c_str(), path.length());
 }
 

@@ -1,176 +1,136 @@
 #include "Main.h"
 #include "JavaScript.h"
+#include "JSDatabase.h"
 #include "HttpRequest.h"
-#include "SQLite.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <iostream>	
-#include <fstream>
 #include <v8.h>
 #include <sqlite3.h>
+#include <sys/socket.h>
+#include <cstdio>
+#include <stdint.h>
 #include <microhttpd.h>
+#include <iostream>
+
+extern "C" {
+#include <avcodec.h>
+}
 
 namespace fs = boost::filesystem;
 using namespace std;
 
-fs::path Main::base = "";
 
-static int file_reader (void *cls, size_t pos, char *buf, int max)
+int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
 {
-  FILE *file = (FILE *)cls;
-
-  fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
+    HttpRequest *req = new HttpRequest(connection, url, method);
+    return req->Process();
 }
 
-// Reads a file into a v8 string.
-v8::Handle<v8::String> ReadFile(const string& name) {
-  FILE* file = fopen(name.c_str(), "rb");
-  if (file == NULL) return v8::Handle<v8::String>();
-
-  fseek(file, 0, SEEK_END);
-  int size = ftell(file);
-  rewind(file);
-
-  char* chars = new char[size + 1];
-  chars[size] = '\0';
-  for (int i = 0; i < size;) {
-    int read = fread(&chars[i], 1, size - i, file);
-    i += read;
-  }
-  fclose(file);
-  v8::Handle<v8::String> result = v8::String::New(chars, size);
-  delete[] chars;
-  return result;
+bool Main::initSQLite(const char* filename) {
+    return sqlite3_open(filename, &db) == SQLITE_OK;
 }
 
-bool Main::RunScript(const string &fragment, int *status, string *text) {
-	int index = fragment.find_first_of("/", 6);
-	string module = fragment.substr(6, index - 6);
-	
-	string file = fs::path(Main::base / "modules" / (module + ".js")).directory_string();
-	cout << "Opening Script: " << file << endl;
-	
-	v8::HandleScope scope;
-	v8::Handle<v8::String> source = ReadFile(file);
-	if (source.IsEmpty()) {
-	  fprintf(stderr, "Error reading '%s'.\n", file.c_str());
-	  return 1;
-	}
-	
-	JsHttpRequestProcessor *processor =  new JsHttpRequestProcessor(source, Main::SQL);
-	
-	string output; 
-	if (!processor->Initialize(&output)) {
-	  fprintf(stderr, "Error initializing processor.\n");
-	  delete processor;
-	  return 1;
-	}
-
-	delete processor;
-	
-	*text = output;
-	*status = 200;
-	
-	return true;
-}
-
-int Main::Response(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
+/*
+bool openJPEG()
 {
-	string* text = new string();
-	string fragment = url;
-	fs::path path = base / "template" / fragment;
-	int ret, statusCode;
-	struct MHD_Response *response;
-	
-	if(fs::exists(path) ) {
-		if(fs::is_directory(path)) {
-			statusCode = 403;
-			*text = "<!DOCTYPE html><html><head><title>403</title></head><body><h2>403 - Forbidden.</h2></body></html>";
-			response = MHD_create_response_from_data(text->length(), (void*) text->data(), false, false);
-		} else {
-			statusCode = 200;
-			FILE *file = fopen(path.native_file_string().c_str(), "r");
-			response = MHD_create_response_from_callback(fs::file_size(path), 32 * 1024, &file_reader, file, NULL);
-		}
-	} else if(fragment.find("/data/") == 0) {
-		Main::RunScript(fragment, &statusCode, text);
-		response = MHD_create_response_from_data(text->length(), (void*) text->data(), false, false);
-	} else {
-		statusCode = 404;
-		*text = "<!DOCTYPE html><html><head><title>404</title></head><body><h2>404 - File not found.</h2></body></html>";
-		response = MHD_create_response_from_data(text->length(), (void*) text->data(), false, false);
-	}
-	
-	MHD_add_response_header(response, "content-type", "text/html; charset=utf-8");
-	ret = MHD_queue_response(connection, statusCode, response);
-	MHD_destroy_response(response);
-  
-	return ret;
-}
+    AVCodec *codec;
+    codec = avcodec_find_decoder(CODEC_ID_LJPEG);
+    AVCodecContext *c = avcodec_alloc_context();
+
+    if(avcodec_open(c, codec) < 0) {
+        av_free(c);
+        cout << "codec open phail" << endl;
+        return false;
+    }
+
+    FILE *f = fopen("test.jpeg", "rb");
+    FILE *outfile = fopen("out.jpg", "wb");
+
+    uint8_t inbuf[INBUF_SIZE + FF_INPUT_BUFFER_PADDING_SIZE];
+    uint8_t *inbuf_ptr = inbuf;
+    uint8_t *outbuf = new uint8_t[AVCODEC_MAX_AUDIO_FRAME_SIZE];
+
+    for(;;) {
+        int size = fread(inbuf, 1, INBUF_SIZE, f);
+        if (size == 0)
+            break;
+
+        inbuf_ptr = inbuf;
+        while (size > 0) {
+            int out_size;
+            int len = avcodec_decode_audio2(c, (short *)outbuf, &out_size,
+                    inbuf_ptr, size);
+            int len = avcodec_decode_video(c, )
 
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName){ 
-  for(int i=0; i<argc; i++){
-    printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-  }
-  printf("\n");
-  return 0;
-}
+2811 int avcodec_decode_video(AVCodecContext *avctx, AVFrame *picture,
+2812                          int *got_picture_ptr,
+2813                          const uint8_t *buf, int buf_size);
 
-string Main::ExecuteQuery(string &query)
-{
-  int rc;
-  char *zErrMsg = 0;
-  rc = sqlite3_exec(db, "CREATE TABLE test(`id` SMALLINT UNSIGNED NOT NULL, PRIMARY KEY ( `id` ))", callback, 0, &zErrMsg);
-  if(rc != SQLITE_OK){
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-    return NULL;
-  }
+
+            if (len < 0) {
+                fprintf(stderr, "Error while decoding\n");
+                exit(1);
+            }
+            if (out_size > 0) {
+                /* if a frame has been decoded, output it */
+                fwrite(outbuf, 1, out_size, outfile);
+            }
+            size -= len;
+            inbuf_ptr += len;
+        }
+    }
+
+    fclose(outfile);
+    fclose(f);
+    delete [] outbuf;
+
+    avcodec_close(c);
+    av_free(c);
 }
+*/
 
 bool Main::Initialize() {
 	// Setup working dir
 	string home = getenv("HOME");
 	Main::base = home + "/.tessst";
 	if(!fs::exists(Main::base)) {
-		if(!create_directory(Main::base)) {
+		if(!create_directory(Main::base))
 			return false;
-		}
 	}
 	chdir(Main::base.directory_string().c_str());
-	
+
 	// Init SQLite
-	SQLite *SQL = new SQLite();
-	if(!SQL.Initialize("database.db")) {
-	  cout << "SQL initialization failed." << endl;
-	  return false;
+	if(!initSQLite("database.db")) {
+        cout << "SQL initialization failed." << endl;
+        return false;
 	}
-	
+
+	JSDatabase::setDB(db);
+
 	// Init MHD
-	server = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, false, false, Main::Response, false, MHD_OPTION_END);
+	server = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, PORT, false, false, requestCurrier, false, MHD_OPTION_END);
 	if (!server)
-		return false;
+        return false;
 
 	cout << "Init successful." << endl;
 }
 
 void Main::StopServer()
 {
-  MHD_stop_daemon(server);
+    MHD_stop_daemon(server);
 }
 
 int main(void)
 {
-	Main *instance = new Main();
-	
-	instance->Initialize();
+    Main *instance = new Main();
 
-	sleep (600);
-	
-	instance->StopServer();
+    instance->Initialize();
 
-	return 0;
+    sleep (600);
+
+    instance->StopServer();
+
+    return 0;
 }

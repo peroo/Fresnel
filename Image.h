@@ -16,7 +16,7 @@ class Image {
     public:
         Image() {}
         bool open(const std::string filename);
-        bool write(int format, const char *filename);
+        bool write(const char *filename, int format);
         bool resize(int x, int y, const int interpolation);
     private:
         int width;

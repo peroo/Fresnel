@@ -43,7 +43,6 @@ bool OggEncode::addStream() {
 }
 
 bool OggEncode::feed(const int * const buff[], int num) {
-    //std::cout << "feed" << num << std::endl;
     float **buffer = vorbis_analysis_buffer(&vd, num);
     
     int j;

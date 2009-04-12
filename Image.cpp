@@ -17,7 +17,7 @@ bool Image::open(const std::string filename) {
     return true;
 }
 
-bool Image::write(int type, const char *filename) {
+bool Image::write(const char *filename, int type) {
     switch(type) {
         case JPEG:
             writeJPEG(filename);

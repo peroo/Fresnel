@@ -18,6 +18,7 @@ class Image {
         bool open(const std::string filename);
         bool write(const char *filename, int format);
         bool resize(int x, int y, const int interpolation);
+        std::string scanBarcode();
     private:
         int width;
         int height;

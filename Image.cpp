@@ -2,6 +2,7 @@
 
 #include <jpeglib.h>
 #include <png.h>
+#include <zebra.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -246,4 +247,39 @@ bool Image::resize(int newWidth, int newHeight, const int interpolation)
 unsigned char Image::clamp(double num)
 {
     return num > 255 ? 255 : num < 0 ? 0 : num;
+}
+
+std::string Image::scanBarcode()
+{
+    std::string barcode = "";
+    unsigned char *data = new unsigned char[width*height];
+    int x, y, position;
+    for(y = 0; y < height; y++) {
+        for(x = 0; x < width; x++) {
+            position = y*width + x;
+            pixel px = bitmap[position];
+            data[position] = clamp(px.r*0.3 + px.g*0.59 + px.b*0.11);
+        }
+    }
+
+    zebra::Image image = zebra::Image(width, height, "Y800", data, width*height);
+    zebra::ImageScanner scanner = zebra::ImageScanner();
+
+    scanner.set_config(zebra::ZEBRA_NONE, zebra::ZEBRA_CFG_ENABLE, 0);
+    scanner.set_config(zebra::ZEBRA_EAN13, zebra::ZEBRA_CFG_ENABLE, 1);
+
+    scanner.scan(image);
+
+    zebra::Image::SymbolIterator iter = image.symbol_begin();
+    zebra::Image::SymbolIterator iterEnd = image.symbol_end();
+
+    for(; iter != iterEnd; ++iter) {
+        std::string temp = iter->get_data().c_str();
+        if(iter->get_location_size() > 1 && temp > barcode)
+            barcode = temp;
+    }
+
+    delete data;
+
+    return barcode;
 }

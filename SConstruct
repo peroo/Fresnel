@@ -17,5 +17,6 @@ LIBS=['v8',
       'vorbisenc', 
       'jpeg', 
       'png',
-      'libtag'])
+      'libtag',
+      'libzebra'])
 

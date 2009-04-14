@@ -24,8 +24,8 @@ class Image {
         int height;
         pixel *bitmap;
 
-        void decodeJPEG(const std::string filename);
-        void decodePNG(const std::string filename);
+        bool decodeJPEG(const std::string filename);
+        bool decodePNG(const std::string filename);
 
         void writeJPEG(const char *filename);
 

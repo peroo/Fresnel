@@ -10,12 +10,10 @@ struct MHD_Daemon;
 
 class Slingshot {
 	public:
-		bool Initialize();
+		bool init();
 		void StopServer();
 
 	private:
-		bool initSQLite(const char*);
-
 		boost::filesystem::path base;
 		sqlite3* db;
 		MHD_Daemon *server;

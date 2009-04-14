@@ -7,9 +7,9 @@ namespace fs = boost::filesystem;
 
 bool AudioFile::readMeta()
 {
-    if(fs::extension(*file) == ".flac") {
+    if(fs::extension(file) == ".flac") {
 
-        TagLib::FLAC::File *flac = new TagLib::FLAC::File(file->string().c_str(), false);
+        TagLib::FLAC::File *flac = new TagLib::FLAC::File(file.string().c_str(), false);
         readXiphComment(flac->xiphComment(true));
         delete flac;
     } else {

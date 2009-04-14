@@ -3,10 +3,11 @@
 
 #include <boost/filesystem/path.hpp>
 #include <taglib/flacfile.h>
+#include <string>
 
 class AudioFile {
     public: 
-        explicit AudioFile(const boost::filesystem::path *f) : file(f) {}
+        explicit AudioFile(const boost::filesystem::path &f) : file(f) {}
         bool readMeta();
 
         std::string album;
@@ -24,7 +25,7 @@ class AudioFile {
         std::string title;
         std::string tracknumber;
     private:
-        const boost::filesystem::path *file;
+        const boost::filesystem::path file;
 
         void readXiphComment(const TagLib::Ogg::XiphComment *tag);
 };

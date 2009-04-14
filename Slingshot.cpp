@@ -25,31 +25,38 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     return req->Process();
 }
 
-bool Slingshot::Initialize() {
+bool Slingshot::init() {
 	// Setup working dir
-	string home = getenv("HOME");
-	Slingshot::base = home + "/.slingshot";
-	if(!fs::exists(Slingshot::base)) {
+    base = fs::path(getenv("HOME")) / ".slingshot";
+	if(!fs::exists(base)) {
 		if(!create_directory(Slingshot::base))
+            std::cout << "Unable to create directory: " << base.string() << std::endl;
 			return false;
 	}
 	chdir(Slingshot::base.directory_string().c_str());
 
 	// Init SQLite
     Database *db = new Database();
-    if(!db->init("database.db"))
-        cout << "SQL initialization failed." << endl;
+    if(!db->init("db.sqlite")) {
+        std::cout << "SQL initialization failed." << std::endl;
         return false;
 	}
-
-	JSDatabase::setDB(db);
+    db->createTables();
 
 	// Init MHD
-	server = MHD_start_daemon (MHD_USE_DEBUG|MHD_USE_THREAD_PER_CONNECTION, PORT, false, false, requestCurrier, false, MHD_OPTION_END);
-	if (!server)
+	server = MHD_start_daemon(
+        MHD_USE_DEBUG|MHD_USE_THREAD_PER_CONNECTION, 
+        PORT, 
+        false, 
+        false, 
+        requestCurrier, 
+        false, 
+        MHD_OPTION_END
+    );
+	if(!server)
         return false;
 
-	cout << "Init successful." << endl;
+	std::cout << "Init successful." << std::endl;
 }
 
 void Slingshot::StopServer()
@@ -66,9 +73,9 @@ void mongis(const FLAC__int32 * const buffer[], int num) {
 
 int main(void)
 {
-    Slingshot *instance = new Slingshot();
+    Slingshot *slingshot = new Slingshot();
 
-    instance->Initialize();
+    slingshot->init();
     
     /*oggenc = new OggEncode();
     oggenc->init();
@@ -97,7 +104,8 @@ int main(void)
     oggenc->closeStream();*/
 
     /*Image test = Image();
-    test.open("Lenna.png");
+    test.open("002.jpg");
+    std::cout << "Barcode detected: " << test.scanBarcode() << std::endl;
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
@@ -105,7 +113,7 @@ int main(void)
     std::string path = string("/home/peroo/ampex");
     test.addFolder(path);
 
-    instance->StopServer();
+    slingshot->StopServer();
 
     return 0;
 }

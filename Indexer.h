@@ -12,7 +12,7 @@ class Indexer {
         int addFolder(const std::string &filename);
     private:
         int scanFolder(const boost::filesystem::path &folder, int parent);
-        bool scanFile(const boost::filesystem::path &file);
+        bool scanFile(const boost::filesystem::path &file, int parent);
 };
 
 #endif

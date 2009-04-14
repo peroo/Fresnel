@@ -1,5 +1,6 @@
 #include "Indexer.h"
 #include "AudioFile.h"
+#include "Database.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -33,33 +34,33 @@ int Indexer::addFolder(const std::string &directory)
 
 int Indexer::scanFolder(const fs::path &dir, int parent)
 {
-    int count = 0;
+    int count = 0, dirID;
     
-    //Database::insertPath();
-    parent = 1;
+    dirID = Database::insertDir(dir, parent, NULL);
     std::cout << "Folder: \"" << dir.leaf() << "\"" << std::endl;
 
     fs::directory_iterator endIter;
     for(fs::directory_iterator iter(dir); iter != endIter; ++iter) {
         if(fs::is_directory(*iter)) {
             if(!fs::is_symlink(*iter)) {
-                count += scanFolder(*iter, parent);
+                count += scanFolder(*iter, dirID);
             }
         } else {
-            if(scanFile(*iter)) count++;
+            if(scanFile(*iter, dirID))
+                count++;
         }
     }
 
     return count;
 }
 
-bool Indexer::scanFile(const fs::path &file)
+bool Indexer::scanFile(const fs::path &file, int path)
 {
-    std::cout << "File: \"" << file.leaf() << "\" - ";
+    std::cout << "File: \"" << file.leaf() << "\" - " << std::endl;
 
-    AudioFile meta = AudioFile(&file);
-    if(meta.readMeta()) {
-        std::cout << "track #" << meta.tracknumber << " by artist \"" << meta.artist << "\"" << std::endl;
+    AudioFile *meta = new AudioFile(file);
+    if(meta->readMeta()) {
+        Database::insertAudio(file, meta, NULL);
     }
 
     return true;

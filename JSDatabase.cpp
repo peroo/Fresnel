@@ -1,12 +1,8 @@
 #include "JSDatabase.h"
 
 #include <v8.h>
-#include <sqlite3.h>
 
-using namespace std;
 using namespace v8;
-
-sqlite3* JSDatabase::db;
 
 v8::Handle<Value> JSDatabase::Select(const Arguments& args) {
     Handle<Array> test = Array::New(2);
@@ -25,8 +21,4 @@ v8::Handle<Value> JSDatabase::Update(const Arguments& args) {
 
 v8::Handle<Value> JSDatabase::Delete(const Arguments& args) {
     return v8::Boolean::New(false);
-}
-
-void JSDatabase::setDB(sqlite3* sqlite) {
-    db = sqlite;
 }

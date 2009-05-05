@@ -1,9 +1,14 @@
 #include "OggEncode.h"
 
 #include <iostream>
+#include <sstream>
 #include <cstdlib>
 
 bool OggEncode::init() {
+
+    output = new std::istringstream(std::ios::in | std::ios::out);
+    input = new std::ostream(output->rdbuf());
+
     vorbis_info_init(&vi);
     if(vorbis_encode_init_vbr(&vi, 2, 44100, .2)) {
         // throw error
@@ -13,12 +18,11 @@ bool OggEncode::init() {
     vorbis_analysis_init(&vd, &vi);
     vorbis_block_init(&vd, &vb);
 
-    output = fopen("out.ogg", "wb");
-
     return true;
 }
 
 // TODO: Add tags to stream
+// TODO: Implement stream chaining
 bool OggEncode::addStream() {
     vorbis_comment_init(&vc);
     vorbis_comment_add_tag(&vc, "ENCODER", "Slingshot v0.0");
@@ -36,8 +40,10 @@ bool OggEncode::addStream() {
         ogg_stream_packetin(&os, &header_comm);
         ogg_stream_packetin(&os, &header_code);
         
-        fwrite(og.header, 1, og.header_len, output);
-        fwrite(og.body, 1, og.body_len, output);
+        input->write((const char *)og.header, og.header_len);
+        input->write((const char *)og.body, og.body_len);
+        //*input << og.header;
+        //*input << og.body;
     }
     return true;
 }
@@ -63,8 +69,13 @@ bool OggEncode::feed(const int * const buff[], int num) {
             while(!eos) {
                 int result = ogg_stream_pageout(&os, &og);
                 if(result==0) break;
-                fwrite(og.header, 1, og.header_len, output);
-                fwrite(og.body, 1, og.body_len, output);
+                std::cout << "writing: " << og.body_len << std::endl;
+                input->write(og.header, og.header_len);
+                input->write(og.body, og.body_len);
+                //*input << og.header;
+                //*input << og.body;
+                //stream->write(og.header, og.header_len);
+                //stream->write(og.body, og.body_len);
 
                 if(ogg_page_eos(&og)) eos = 1;
             }
@@ -73,12 +84,21 @@ bool OggEncode::feed(const int * const buff[], int num) {
     return true;
 }
 
+int OggEncode::read(int pos, int max, char *buffer)
+{
+    int count = 0;
+    while(count == 0) {
+        sleep(1);
+        count = output->readsome(buffer, max);
+    }
+    std::cout << "read: " << count << std::endl;
+    return count;
+}
+
 void OggEncode::closeStream() {
     ogg_stream_clear(&os);
     vorbis_block_clear(&vb);
     vorbis_dsp_clear(&vd);
     vorbis_comment_clear(&vc);
     vorbis_info_clear(&vi);
-
-    fclose(output);
 }

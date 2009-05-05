@@ -18,5 +18,6 @@ LIBS=['v8',
       'jpeg', 
       'png',
       'libtag',
-      'libzebra'])
+      'libzebra',
+      'pthread'])
 

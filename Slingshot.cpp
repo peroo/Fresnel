@@ -21,7 +21,8 @@ namespace fs = boost::filesystem;
 
 int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
 {
-    HttpRequest *req = new HttpRequest(connection, url, method);
+    pthread_t thread;
+    HttpRequest *req = new HttpRequest(connection, url, method, &thread);
     return req->Process();
 }
 
@@ -64,9 +65,7 @@ void Slingshot::StopServer()
     MHD_stop_daemon(server);
 }
 
-OggEncode* oggenc;
-
-void mongis(const FLAC__int32 * const buffer[], int num) {
+void mongis(const FLAC__int32 * const buffer[], int num, OggEncode *oggenc) {
     oggenc->feed(buffer, num);
     return;
 }
@@ -74,10 +73,9 @@ void mongis(const FLAC__int32 * const buffer[], int num) {
 int main(void)
 {
     Slingshot *slingshot = new Slingshot();
-
     slingshot->init();
     
-    /*oggenc = new OggEncode();
+    /*OggEncode *oggenc = new OggEncode();
     oggenc->init();
     oggenc->addStream();
 
@@ -109,9 +107,11 @@ int main(void)
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
-    Indexer test = Indexer();
+    /*Indexer test = Indexer();
     std::string path = string("/home/peroo/ampex");
-    test.addFolder(path);
+    test.addFolder(path);*/
+
+    sleep(600);
 
     slingshot->StopServer();
 

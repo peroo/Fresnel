@@ -2,15 +2,15 @@
 #define OGG_H
 
 #include <vorbis/vorbisenc.h>
-#include <cstdio>
+#include <iostream>
 
 class OggEncode {
     public:
-        OggEncode() {}
         bool init();
         void abort() {}
         bool addStream();
         bool feed(const int * const buffer[], int num);
+        int read(int pos, int max, char *buffer);
         void closeStream();
     private:
         ogg_stream_state os;
@@ -21,7 +21,8 @@ class OggEncode {
         vorbis_dsp_state vd;
         vorbis_block vb;
 
-        FILE *output;
+        std::ostream *input;
+        std::istringstream *output;
         int eos;
 };
 

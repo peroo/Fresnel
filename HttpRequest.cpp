@@ -59,6 +59,7 @@ int HttpRequest::Process()
         // File resource
         
         oggenc->init();
+        oggenc->addStream();
         
         statusCode = 200;
         mimeType = "audio/ogg";
@@ -80,18 +81,16 @@ int HttpRequest::Process()
     } else {
 		statusCode = 404;
 		text = "<!DOCTYPE html><html><head><title>404</title></head><body><h2>404 - File not found.</h2></body></html>";
-		response = MHD_create_response_from_data(text.size(), (void*) text.data(), false, false);
+		response = MHD_create_response_from_data(text.size(), (void*) text.data(), MHD_NO, MHD_NO);
     }
 
 	MHD_add_response_header(response, "content-type", mimeType.append("; charset=utf-8").c_str());
-	MHD_queue_response(connection, statusCode, response);
+	int ret = MHD_queue_response(connection, statusCode, response);
 	MHD_destroy_response(response);
 
     std::cout << "URL: " << url << std::endl;
 
-    //pthread_join(processor, NULL);
-
-    return MHD_YES;
+    return ret;
 }
 
 /*static int file_reader (void *cls, size_t pos, char *buf, int max)

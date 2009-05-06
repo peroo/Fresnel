@@ -65,11 +65,6 @@ void Slingshot::StopServer()
     MHD_stop_daemon(server);
 }
 
-void mongis(const FLAC__int32 * const buffer[], int num, OggEncode *oggenc) {
-    oggenc->feed(buffer, num);
-    return;
-}
-
 int main(void)
 {
     Slingshot *slingshot = new Slingshot();

@@ -3,6 +3,7 @@
 
 #include <vorbis/vorbisenc.h>
 #include <iostream>
+#include <vector>
 
 class OggEncode {
     public:
@@ -21,8 +22,10 @@ class OggEncode {
         vorbis_dsp_state vd;
         vorbis_block vb;
 
-        std::ostream *input;
-        std::istringstream *output;
+        void pushArray(unsigned char *chars, int num);
+
+        std::vector<unsigned char> stream;
+        FILE *ffile;
         int eos;
 };
 

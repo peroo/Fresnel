@@ -1,4 +1,13 @@
-Program(['Slingshot.cpp', 
+if ARGUMENTS.get('debug', 0):
+    env = Environment(CCFLAGS = '-g')
+else:
+    env = Environment()
+#    env = Environment(CCFLAGS = '-O9')
+
+
+
+
+env.Program(['Slingshot.cpp', 
          'JavaScript.cpp', 
          'HttpRequest.cpp', 
          'JSDatabase.cpp', 

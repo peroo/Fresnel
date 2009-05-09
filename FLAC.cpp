@@ -22,6 +22,4 @@ void FLACDecoder::error_callback(FLAC__StreamDecoderErrorStatus status)
 
 void FLACDecoder::close()
 {
-    ogg->closeStream();
-    delete ogg;
 }

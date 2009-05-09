@@ -22,10 +22,11 @@ class OggEncode {
         vorbis_dsp_state vd;
         vorbis_block vb;
 
-        void pushArray(unsigned char *chars, int num);
+        void pushArray(unsigned char *chars, long num);
 
         std::vector<unsigned char> stream;
-        FILE *ffile;
+        int lastPos;
+        int lastSize;
         int eos;
 };
 

@@ -3,7 +3,7 @@
 #include <jpeglib.h>
 #include <jerror.h>
 #include <png.h>
-#include <zebra.h>
+#include <zbar.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -381,16 +381,16 @@ std::string Image::scanBarcode()
         }
     }
 
-    zebra::Image image = zebra::Image(width, height, "Y800", data, width*height);
-    zebra::ImageScanner scanner = zebra::ImageScanner();
+    zbar::Image image = zbar::Image(width, height, "Y800", data, width*height);
+    zbar::ImageScanner scanner = zbar::ImageScanner();
 
-    scanner.set_config(zebra::ZEBRA_NONE, zebra::ZEBRA_CFG_ENABLE, 0);
-    scanner.set_config(zebra::ZEBRA_EAN13, zebra::ZEBRA_CFG_ENABLE, 1);
+    scanner.set_config(zbar::ZBAR_NONE, zbar::ZBAR_CFG_ENABLE, 0);
+    scanner.set_config(zbar::ZBAR_EAN13, zbar::ZBAR_CFG_ENABLE, 1);
 
     scanner.scan(image);
 
-    zebra::Image::SymbolIterator iter = image.symbol_begin();
-    zebra::Image::SymbolIterator iterEnd = image.symbol_end();
+    zbar::Image::SymbolIterator iter = image.symbol_begin();
+    zbar::Image::SymbolIterator iterEnd = image.symbol_end();
 
     for(; iter != iterEnd; ++iter) {
         std::string temp = iter->get_data().c_str();

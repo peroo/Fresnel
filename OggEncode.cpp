@@ -8,7 +8,7 @@
 bool OggEncode::init() {
 
     eos = 0;
-    ffile = fopen("fileout.ogg", "wb");
+    lastPos = -1;
 
     vorbis_info_init(&vi);
     if(vorbis_encode_init_vbr(&vi, 2, 44100, .2)) {
@@ -40,18 +40,21 @@ bool OggEncode::addStream() {
         ogg_stream_packetin(&os, &header);
         ogg_stream_packetin(&os, &header_comm);
         ogg_stream_packetin(&os, &header_code);
-        
-        pushArray(og.header, og.header_len);
-        pushArray(og.body, og.body_len);
+
+        while(!eos) {
+            int result = ogg_stream_flush(&os, &og);
+            if(result == 0) break;
+
+            pushArray(og.header, og.header_len);
+            pushArray(og.body, og.body_len);
+        }
     }
     return true;
 }
 
-void OggEncode::pushArray(unsigned char *chars, int num)
+void OggEncode::pushArray(unsigned char *chars, long num)
 {
-    std::cout << "writing: " << num << std::endl;
     stream.insert(stream.end(), chars, chars + num);
-    fwrite(chars, 1, num, ffile);
 }
 
 bool OggEncode::feed(const int * const buff[], int num) {
@@ -87,17 +90,23 @@ bool OggEncode::feed(const int * const buff[], int num) {
 
 int OggEncode::read(int pos, int max, char *buffer)
 {
+    if(pos != lastPos)
+        stream.erase(stream.begin(), stream.begin() + lastSize);
+
     if(stream.size() == 0) sleep(1);
     int count = stream.size(); 
         count = count > max ? max : count;
-    std::cout << "reading: " << count << std::endl;
-    memcpy(&stream[0], buffer, count);
-    stream.erase(stream.begin(), stream.begin() + count);
+    memcpy(buffer, &stream[0], count);
+
+    lastPos = pos;
+    lastSize = count;
 
     if(count > 0)
         return count;
-    else 
+    else {
+        closeStream();
         return -1;
+    }
 }
 
 void OggEncode::closeStream() {
@@ -106,5 +115,4 @@ void OggEncode::closeStream() {
     vorbis_dsp_clear(&vd);
     vorbis_comment_clear(&vc);
     vorbis_info_clear(&vi);
-    fclose(ffile);
 }

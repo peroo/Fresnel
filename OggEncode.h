@@ -25,8 +25,7 @@ class OggEncode {
         void pushArray(unsigned char *chars, long num);
 
         std::vector<unsigned char> stream;
-        int lastPos;
-        int lastSize;
+        bool isActive;
         int eos;
 };
 

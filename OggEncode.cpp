@@ -8,7 +8,7 @@
 bool OggEncode::init() {
 
     eos = 0;
-    lastPos = -1;
+    isActive = true;
 
     vorbis_info_init(&vi);
     if(vorbis_encode_init_vbr(&vi, 2, 44100, .2)) {
@@ -90,18 +90,13 @@ bool OggEncode::feed(const int * const buff[], int num) {
 
 int OggEncode::read(int pos, int max, char *buffer)
 {
-    if(pos != lastPos)
-        stream.erase(stream.begin(), stream.begin() + lastSize);
+    if(pos == stream.size())
+        sleep(1);
 
-    if(stream.size() == 0) sleep(1);
-    int count = stream.size(); 
-        count = count > max ? max : count;
-    memcpy(buffer, &stream[0], count);
+    int count = pos + max > stream.size() ? stream.size() - pos : max; 
+    memcpy(buffer, &stream[pos], count);
 
-    lastPos = pos;
-    lastSize = count;
-
-    if(count > 0)
+    if(isActive || count > 0)
         return count;
     else {
         closeStream();

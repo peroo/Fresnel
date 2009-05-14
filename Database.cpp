@@ -1,5 +1,6 @@
 #include "Database.h"
-#include "AudioFile.h"
+#include "Audio/Audio.h"
+#include "Audio/Metadata.h"
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -68,11 +69,15 @@ bool Database::createTables()
     return true;
 }
 
-bool Database::insertAudio(const fs::path &file, const AudioFile *meta, int path)
+bool Database::insertAudio(const fs::path &file, int path)
 {
     int id = insertFile(file, path);
     if(id <= 0)
         return false;
+
+    Audio *audio = new Audio();
+    audio->init(path);
+    Metadata *meta = audio->getMetadata();
 
     std::string query = "INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?)";
 
@@ -101,6 +106,9 @@ bool Database::insertAudio(const fs::path &file, const AudioFile *meta, int path
     sqlite3_finalize(statement);
 
     return sqlite3_last_insert_rowid(db);
+
+    delete meta;
+    delete audio;
 
     return true;
 }

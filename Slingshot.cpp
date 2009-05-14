@@ -3,8 +3,6 @@
 #include "JSDatabase.h"
 #include "JavaScript.h"
 #include "HttpRequest.h"
-#include "FLAC.h"
-#include "OggEncode.h"
 #include "Image.h"
 #include "Indexer.h"
 
@@ -12,7 +10,7 @@
 #include <boost/filesystem/path.hpp>
 #include <sqlite3.h>
 #include <microhttpd.h>
-#include <sys/socket.h>
+
 #include <cstdio>
 #include <stdint.h>
 #include <iostream>
@@ -21,8 +19,7 @@ namespace fs = boost::filesystem;
 
 int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
 {
-    pthread_t thread;
-    HttpRequest *req = new HttpRequest(connection, url, method, &thread);
+    HttpRequest *req = new HttpRequest(connection, url, method);
     return req->Process();
 }
 

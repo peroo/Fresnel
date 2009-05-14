@@ -1,5 +1,5 @@
 #include "Indexer.h"
-#include "AudioFile.h"
+#include "Audio/Audio.h"
 #include "Database.h"
 
 #include <boost/filesystem/operations.hpp>
@@ -58,10 +58,7 @@ bool Indexer::scanFile(const fs::path &file, int path)
 {
     std::cout << "File: \"" << file.leaf() << "\" - " << std::endl;
 
-    AudioFile *meta = new AudioFile(file);
-    if(meta->readMeta()) {
-        Database::insertAudio(file, meta, NULL);
-    }
+    Database::insertAudio(file, path);
 
     return true;
 }

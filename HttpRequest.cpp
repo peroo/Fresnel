@@ -1,12 +1,11 @@
 #include "HttpRequest.h"
-#include "OggEncode.h"
+#include "Resource.h"
+#include "Audio/Audio.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <sys/socket.h>
-#include <cstdio>
-#include <stdint.h>
 #include <microhttpd.h>
+
 #include <string>
 #include <iostream>
 #include <pthread.h>
@@ -22,23 +21,7 @@ int HttpRequest::headerIterator(void *map, enum MHD_ValueKind kind, const char *
 
 int callback(void *cls, uint64_t pos, char *buf, int max)
 {
-    return static_cast<OggEncode *>(cls)->read(pos, max, buf);
-}
-
-void mongis(const FLAC__int32 * const buffer[], int num, OggEncode *ogg) {
-    ogg->feed(buffer, num);
-    return;
-}
-
-void * encode(void *flacdec)
-{
-    FLACDecoder *flac = static_cast<FLACDecoder *>(flacdec);
-    std::cout << "encoding..." << std::endl;
-    int ok = flac->process_until_end_of_stream();
-    std::cout << "decoding: " << (ok ? "succeeded" : "FAILED") << std::endl;
-
-    flac->close();
-    delete flac;
+    return static_cast<Resource*>(cls)->read(pos, max, buf);
 }
 
 int HttpRequest::Process()
@@ -51,34 +34,28 @@ int HttpRequest::Process()
 	struct MHD_Response *response;
     MHD_get_connection_values(connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
 
-    OggEncode *oggenc = new OggEncode();
-    FLACDecoder *flacdec = new FLACDecoder(mongis, oggenc);
-
     // Determine response
     if(fragment.find("/resource/") == 0) {
         // File resource
         
-        oggenc->init();
-        oggenc->addStream();
-        
+        Resource *res = new Audio();
+        res->init(fs::path("air.flac"));
+        res->load(SLING_VORBIS);
+
         statusCode = 200;
         mimeType = "audio/ogg";
 
-        FLAC__StreamDecoderInitStatus init_status = flacdec->init("air.flac");
-        flacdec->set_md5_checking(true);
-        
-        pthread_create(processor, NULL, encode, flacdec);
-
-        response = MHD_create_response_from_callback(-1, 32*1024, callback, oggenc, NULL);
-    } else if (fs::exists(base / "template" / fragment)) {
+        response = MHD_create_response_from_callback(-1, 32*1024, callback, res, NULL);
+    }
+    else if (fs::exists(base / "template" / fragment)) {
         // HTTP data from JS templates
-    
-
-    } else if (fragment.find("/data/") == 0) {
+    }
+    else if (fragment.find("/data/") == 0) {
         // JSON data
 		//HttpRequest::RunScript(fragment, &statusCode, text);
 		//response = MHD_create_response_from_data(text->length(), (void*) text->c_str(), false, false);
-    } else {
+    }
+    else {
 		statusCode = 404;
 		text = "<!DOCTYPE html><html><head><title>404</title></head><body><h2>404 - File not found.</h2></body></html>";
 		response = MHD_create_response_from_data(text.size(), (void*) text.data(), MHD_NO, MHD_NO);

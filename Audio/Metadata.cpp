@@ -1,37 +1,51 @@
-#include "AudioFile.h"
+#include "Metadata.h"
 
 #include <boost/filesystem/convenience.hpp>
-#include <taglib/xiphcomment.h>
 
 namespace fs = boost::filesystem;
 
-bool AudioFile::readMeta()
+bool Metadata::loadData(fs::path path)
 {
-    if(fs::extension(file) == ".flac") {
+    std::string ext = fs::extension(path);
+    for(int i = 0; i < ext.size(); ++i) {
+        ext[i] = tolower(ext[i]);
+    }
 
-        TagLib::FLAC::File *flac = new TagLib::FLAC::File(file.string().c_str(), false);
-        readXiphComment(flac->xiphComment(true));
+    if(ext == ".flac") {
+        TagLib::FLAC::File *flac = new TagLib::FLAC::File(path.string().c_str(), true);
+        if(!parseXiphComment(flac->xiphComment(false))) {
+            if(!parseId3v2(flac->ID3v2Tag(false))) {
+                parseId3v1(flac->ID3v1Tag(true));
+            }
+        }
         delete flac;
-    } else {
-        return false;
+    }
+    else if(ext == ".ogg") {
+        // TODO: Vorbis is assumed even though it might be FLAC/Speex. May or may not cause fatal problems.
+        TagLib::Ogg::Vorbis::File *ogg = new TagLib::Ogg::Vorbis::File(path.string().c_str(), true);
+        parseXiphComment(ogg->tag());
+        delete ogg;
     }
 
     return true;
 }
 
-void AudioFile::readXiphComment(const TagLib::Ogg::XiphComment *tag)
+bool Metadata::fetchData(int index)
 {
+    return false;
+}
+
+bool Metadata::parseXiphComment(TagLib::Ogg::XiphComment *tag)
+{
+    if(tag == NULL) return false;
+
     const TagLib::Ogg::FieldListMap map = tag->fieldListMap();
     if (!map["ALBUM"].isEmpty())
         album = map["ALBUM"].front().to8Bit(true);
     if (!map["ALBUMARTIST"].isEmpty())
         albumartist = map["ALBUMARTIST"].front().to8Bit(true);
-    if (!map["ALBUMARTISTSORT"].isEmpty())
-        albumartistsort = map["ALBUMARTISTSORT"].front().to8Bit(true);
     if (!map["ARTIST"].isEmpty())
         artist = map["ARTIST"].front().to8Bit(true);
-    if (!map["ARTISTSORT"].isEmpty())
-        artistsort = map["ARTISTSORT"].front().to8Bit(true);
     if (!map["MUSICBRAINZ_ALBUMARTISTID"].isEmpty())
         musicbrainz_albumartistid = map["MUSICBRAINZ_ALBUMARTISTID"].front().to8Bit(true);
     if (!map["MUSICBRAINZ_ALBUMID"].isEmpty())
@@ -45,7 +59,17 @@ void AudioFile::readXiphComment(const TagLib::Ogg::XiphComment *tag)
     if (!map["TRACKNUMBER"].isEmpty())
         tracknumber = map["TRACKNUMBER"].front().to8Bit(true);
     if (!map["DATE"].isEmpty())
-        released = map["DATE"].front().to8Bit(true);
-    if (!map["GENRE"].isEmpty())
-        genre = map["GENRE"].front().to8Bit(true);
+        date = map["DATE"].front().to8Bit(true);
+
+    return true;
+}
+
+bool Metadata::parseId3v2(TagLib::ID3v2::Tag *tag)
+{
+    return false;
+}
+
+bool Metadata::parseId3v1(TagLib::ID3v1::Tag *tag)
+{
+    return false;
 }

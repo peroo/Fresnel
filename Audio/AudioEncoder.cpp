@@ -1,21 +1,28 @@
 #include "AudioEncoder.h"
 
+#include <pthread.h>
 #include <cstring>
 #include <unistd.h>
+
+bool AudioEncoder::start() {}
+void AudioEncoder::close() {}
 
 bool AudioEncoder::init(int _channels, float _quality) {
     channels = _channels;
     quality = _quality;
     buffer.resize(channels);
+    pthread_mutex_init(&mutex, NULL);
 
     return true;
 }
 
-void AudioEncoder::feed(int count, const int *_buffer) {
+void AudioEncoder::feed(int count, const int * const _buffer[]) {
     int i;
-    for(i = 0; i < channels; ++i) {
+    pthread_mutex_lock(&mutex);
+    for(i = 0; i < channels; i++) {
         buffer[i].insert(buffer[i].end(), _buffer[i], _buffer[i] + count);
     }
+    pthread_mutex_unlock(&mutex);
 }
 
 int AudioEncoder::read(int pos, int max, char *_buffer) {
@@ -27,10 +34,8 @@ int AudioEncoder::read(int pos, int max, char *_buffer) {
 
     if(feeding || count > 0)
         return count;
-    else {
-        close();
+    else
         return -1;
-    }
 }
 
 void AudioEncoder::feedingDone() {

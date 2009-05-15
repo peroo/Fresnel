@@ -7,7 +7,6 @@
 
 class VorbisEncoder: public AudioEncoder {
     public:
-        VorbisEncoder() {}
         bool start();
         
     private:

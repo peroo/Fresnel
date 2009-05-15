@@ -9,8 +9,8 @@ class Resource {
         bool init(int index);
         bool init(boost::filesystem::path path);
 
-        virtual bool load(int index);
-        virtual int read(int pos, int max, char *buffer);
+        virtual bool load(int index) = 0;
+        virtual int read(int pos, int max, char *buffer) = 0;
     protected:
         int fileIndex;
         bool indexed;

@@ -4,6 +4,9 @@
 
 namespace fs = boost::filesystem;
 
+bool Resource::load(int index) {}
+int Resource::read(int pos, int max, char *buffer) {}
+
 bool Resource::init(int index)
 {
     fileIndex = index;

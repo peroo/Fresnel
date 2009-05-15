@@ -1,8 +1,16 @@
+env = Environment()
+#env['CC'] = 'icc'
+#env['CXX'] = 'icpc'
+#env['LINKERFORPROGRAMS'] = 'icpc'
+
 if ARGUMENTS.get('debug', 0):
-    env = Environment(CCFLAGS = '-g')
+    env['CCFLAGS'] = '-g'
+elif ARGUMENTS.get('optimize', 0):
+#    env['CCFLAGS'] = '-fast'
+#    env['CCFLAGS'] = '-O9'
+    env['CCFLAGS'] = '-O2 -ftree-vectorize -ftree-vectorizer-verbose=3 -ffast-math'
 else:
-    env = Environment(CCFLAGS = '-Wno-write-strings')
-#    env = Environment(CCFLAGS = '-O9')
+    env['CCFLAGS'] = '-Wno-write-strings'
 
 env.Program(['Slingshot.cpp', 
          'JavaScript.cpp', 
@@ -29,5 +37,8 @@ LIBS=['v8',
       'png',
       'tag',
       'zbar',
-      'pthread'])
+      'pthread',
+      'profiler',
+      'tcmalloc'
+])
 

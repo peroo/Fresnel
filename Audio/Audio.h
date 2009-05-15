@@ -13,7 +13,7 @@ class Metadata;
 
 class Audio : public Resource {
     public:
-        bool load(int output);
+        virtual bool load(int output);
         int read(int pos, int max, char *buffer);
         Metadata* getMetadata();
 

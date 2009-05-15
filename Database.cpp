@@ -1,4 +1,5 @@
 #include "Database.h"
+#include "Resource.h"
 #include "Audio/Audio.h"
 #include "Audio/Metadata.h"
 

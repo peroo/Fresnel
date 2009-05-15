@@ -1,12 +1,17 @@
 #include "VorbisEncoder.h"
 
+#include <iostream>
+#include <pthread.h>
 #include <ctime>
 #include <cstdlib>
 #include <unistd.h>
+#include <google/profiler.h>
 
 
 bool VorbisEncoder::start()
 {
+    data.reserve(5000000);
+
     eos = false;
     feeding = true;
     active = true;
@@ -45,21 +50,28 @@ bool VorbisEncoder::start()
         }
     }
 
-    while(feeding) {
-        if(buffer.front().size() == 0)
-            sleep(1);
+    int i, j, count, size;
+    int pos = 0;
+    int max = 65536;
+    std::vector< std::vector<int> >::iterator channelIter;
+    std::vector<int>::iterator sampleIter;
+
+    time_t start = time(NULL);
+    ProfilerStart("/home/peroo/server/out.prof");
+    while(feeding || (buffer.front().size() - pos) > 0) {
+        size = buffer.front().size();
+        count = size - pos < max ? size - pos : max;
             
-        int count = buffer.front().size();
         float **buf = vorbis_analysis_buffer(&vd, count);
     
-        int i, j;
-        std::vector< std::vector<int> >::iterator channelIter;
-        std::vector<int>::iterator sampleIter;
-        for(channelIter = buffer.begin(), i = 0; channelIter < buffer.end(); channelIter++, i++) {
-            for(sampleIter = channelIter->begin(), j = 0; sampleIter < channelIter->end(); sampleIter++, j++) {
-                buf[i][j] = (*sampleIter) / 32768.f;
+        pthread_mutex_lock(&mutex);
+        for(i = 0; i < channels; ++i) {
+            for(j = 0; j < count; ++j) {
+                buf[i][j] = buffer[i][pos + j] / 32768.f;
             }
         }
+        pos += count;
+        pthread_mutex_unlock(&mutex);
 
         vorbis_analysis_wrote(&vd, j);
 
@@ -80,13 +92,14 @@ bool VorbisEncoder::start()
                 }
             }
         }
-
-        for(channelIter = buffer.begin(); channelIter < buffer.end(); channelIter++) {
-            channelIter->erase(channelIter->begin(), channelIter->begin() + count);
-        }
     }
+    ProfilerStop();
+    time_t end = time(NULL);
+
+    std::cout << "encoding finished in " << end - start << "s." << std::endl;
 
     active = false;
+    close();
 
     return true;
 }

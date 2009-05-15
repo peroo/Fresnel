@@ -12,7 +12,7 @@ class AudioDecoder {
     public:
         AudioDecoder(boost::filesystem::path _file) : file(_file) {}
         void init(AudioEncoder *_encoder);
-        virtual bool start();
+        virtual bool start() = 0;
     protected:
         AudioEncoder *encoder;
         boost::filesystem::path file;        

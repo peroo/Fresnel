@@ -103,9 +103,10 @@ int main(void)
     std::string path = string("/home/peroo/ampex");
     test.addFolder(path);*/
 
-    sleep(600);
+    sleep(60);
 
     slingshot->StopServer();
+    exit(0);
 
     return 0;
 }

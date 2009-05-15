@@ -1,7 +1,5 @@
 #include "Audio.h"
 #include "Metadata.h"
-#include "AudioDecoder.h"
-#include "AudioEncoder.h"
 #include "FLACDecoder.h"
 #include "VorbisEncoder.h"
 
@@ -25,21 +23,22 @@ void* encode(void *encoder)
 
 bool Audio::load(int output)
 {
-    if(extension == "flac") {
+    if(extension == ".flac") {
         decoder = new FLACDecoder(path);
     }
     if(output == SLING_VORBIS) {
         // TODO: Use channel count from decoder
-        VorbisEncoder *enc = new VorbisEncoder();
+        encoder = new VorbisEncoder();
+        encoder->init(2, 0.2);
     }
 
     decoder->init(encoder);
 
-    pthread_t *encThread;
-    pthread_t *decThread;
+    pthread_t encThread;
+    pthread_t decThread;
 
-    pthread_create(decThread, NULL, decode, decoder);
-    pthread_create(encThread, NULL, encode, encoder);
+    pthread_create(&decThread, NULL, decode, decoder);
+    pthread_create(&encThread, NULL, encode, encoder);
 
     return true;
 }

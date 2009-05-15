@@ -10,8 +10,6 @@
 
 bool VorbisEncoder::start()
 {
-    data.reserve(5000000);
-
     eos = false;
     feeding = true;
     active = true;
@@ -73,7 +71,7 @@ bool VorbisEncoder::start()
         pos += count;
         pthread_mutex_unlock(&mutex);
 
-        vorbis_analysis_wrote(&vd, j);
+        vorbis_analysis_wrote(&vd, count);
 
         while(vorbis_analysis_blockout(&vd, &vb) == 1) {
             vorbis_analysis(&vb, NULL);
@@ -95,6 +93,8 @@ bool VorbisEncoder::start()
     }
     ProfilerStop();
     time_t end = time(NULL);
+
+    std::cout << buffer[0].size() << std::endl;
 
     std::cout << "encoding finished in " << end - start << "s." << std::endl;
 

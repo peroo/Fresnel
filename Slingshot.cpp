@@ -67,46 +67,19 @@ int main(void)
     Slingshot *slingshot = new Slingshot();
     slingshot->init();
     
-    /*OggEncode *oggenc = new OggEncode();
-    oggenc->init();
-    oggenc->addStream();
-
-    bool ok = true;
-    FILE* file = fopen("out.wav", "wb");
-    FLACDecoder decoder(file, mongis);
-
-    (void)decoder.set_md5_checking(true);
-
-    FLAC__StreamDecoderInitStatus init_status = decoder.init("air.flac");
-    if(init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
-        fprintf(stderr, "ERROR: initializing decoder: %s\n", FLAC__StreamDecoderInitStatusString[init_status]);
-        ok = false;
-    }
-
-    if(ok) {
-        ok = decoder.process_until_end_of_stream();
-        fprintf(stderr, "decoding: %s\n", ok ? "succeeded" : "FAILED");
-        fprintf(stderr, "   state: %s\n", decoder.get_state().resolved_as_cstring(decoder));
-    }
-
-    fclose(file);
-
-    oggenc->closeStream();*/
-
     /*Image test = Image();
     test.open("002.jpg");
     std::cout << "Barcode detected: " << test.scanBarcode() << std::endl;
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
-    /*Indexer test = Indexer();
-    std::string path = string("/home/peroo/ampex");
-    test.addFolder(path);*/
+    Indexer test = Indexer();
+    std::string path = string("/home/peroo/raid/Flac/Fantastic Plastic Machine/");
+    test.addFolder(path);
 
-    sleep(60);
+    sleep(600);
 
     slingshot->StopServer();
-    exit(0);
 
     return 0;
 }

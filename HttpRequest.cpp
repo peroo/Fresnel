@@ -52,8 +52,8 @@ int HttpRequest::Process()
     }
     else if (fragment.find("/data/") == 0) {
         // JSON data
-		//HttpRequest::RunScript(fragment, &statusCode, text);
-		//response = MHD_create_response_from_data(text->length(), (void*) text->c_str(), false, false);
+		HttpRequest::RunScript(fragment, &statusCode, text);
+		response = MHD_create_response_from_data(text->length(), (void*) text->c_str(), false, false);
     }
     else {
 		statusCode = 404;

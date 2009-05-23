@@ -94,7 +94,7 @@ bool VorbisEncoder::start()
     ProfilerStop();
     time_t end = time(NULL);
 
-    std::cout << buffer[0].size() << std::endl;
+    buffer.clear();
 
     std::cout << "encoding finished in " << end - start << "s." << std::endl;
 

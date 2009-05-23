@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <cstring>
 #include <unistd.h>
+#include <iostream>
 
 bool AudioEncoder::start() {}
 void AudioEncoder::close() {}
@@ -39,6 +40,7 @@ int AudioEncoder::read(int pos, int max, char *_buffer) {
 }
 
 void AudioEncoder::feedingDone() {
+    std::cout << "Feeding done." << std::endl;
     feeding = false;
 }
 

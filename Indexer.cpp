@@ -4,6 +4,7 @@
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/convenience.hpp>
 #include <iostream>
 
 namespace fs = boost::filesystem;
@@ -37,7 +38,7 @@ int Indexer::scanFolder(const fs::path &dir, int parent)
     int count = 0, dirID;
     
     dirID = Database::insertDir(dir, parent, NULL);
-    std::cout << "Folder: \"" << dir.leaf() << "\"" << std::endl;
+    std::cout << "Folder:\t\"" << dir.leaf() << "\"" << std::endl << "===================================" << std::endl;
 
     fs::directory_iterator endIter;
     for(fs::directory_iterator iter(dir); iter != endIter; ++iter) {
@@ -51,14 +52,20 @@ int Indexer::scanFolder(const fs::path &dir, int parent)
         }
     }
 
+    std::cout << std::endl;
+
     return count;
 }
 
 bool Indexer::scanFile(const fs::path &file, int path)
 {
-    std::cout << "File: \"" << file.leaf() << "\" - " << std::endl;
 
-    Database::insertAudio(file, path);
-
-    return true;
+    std::string ext = fs::extension(file);
+    if(ext == ".flac" || ext == ".ogg") {
+        std::cout << "Audio:\t\"" << file.leaf() << "\"" << std::endl;
+        Database::insertAudio(file, path);
+        return true;
+    }
+    
+    return false;
 }

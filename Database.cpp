@@ -77,7 +77,7 @@ bool Database::insertAudio(const fs::path &file, int path)
         return false;
 
     Audio *audio = new Audio();
-    audio->init(path);
+    audio->init(file);
     Metadata *meta = audio->getMetadata();
 
     std::string query = "INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?)";

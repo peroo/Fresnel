@@ -10,7 +10,7 @@ bool Metadata::loadData(fs::path path)
     for(int i = 0; i < ext.size(); ++i) {
         ext[i] = tolower(ext[i]);
     }
-/*
+
     if(ext == ".flac") {
         TagLib::FLAC::File *flac = new TagLib::FLAC::File(path.string().c_str(), true);
         if(!parseXiphComment(flac->xiphComment(false))) {
@@ -25,7 +25,7 @@ bool Metadata::loadData(fs::path path)
         TagLib::Ogg::Vorbis::File *ogg = new TagLib::Ogg::Vorbis::File(path.string().c_str(), true);
         parseXiphComment(ogg->tag());
         delete ogg;
-    }*/
+    }
 
     return true;
 }
@@ -34,7 +34,7 @@ bool Metadata::fetchData(int index)
 {
     return false;
 }
-/*
+
 bool Metadata::parseXiphComment(TagLib::Ogg::XiphComment *tag)
 {
     if(tag == NULL) return false;
@@ -72,4 +72,4 @@ bool Metadata::parseId3v2(TagLib::ID3v2::Tag *tag)
 bool Metadata::parseId3v1(TagLib::ID3v1::Tag *tag)
 {
     return false;
-}*/
+}

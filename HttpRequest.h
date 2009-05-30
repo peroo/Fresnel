@@ -1,5 +1,5 @@
-#ifndef HTTPREQUEST_H
-#define HTTPREQUEST_H
+#ifndef REQUEST_H 
+#define REQUEST_H
 
 #include <sys/socket.h>
 #include <stdint.h>
@@ -9,25 +9,36 @@
 #include <string>
 #include <map>
 
+class Resource;
+
+enum req_module {
+    Resource,
+    Data
+}
 
 /**
  * A simplified http request.
  */
 class HttpRequest {
     public:
-        HttpRequest(struct MHD_Connection *_connection, const char *_url, const char *_method) : connection(_connection), url(_url), method(_method) {}
+        HttpRequest(struct MHD_Connection *connection, const char *url, const char *method) : connection(connection), url(url), method(method) {}
+        bool init();
 
-        int Process();
-    private:
-        MHD_Connection* connection;
+        void renderResource(Resource *res);
 
-        std::string url;
-        std::string method;
-        std::string referrer;
-        std::string host;
-        std::string user_agent;
+        const std::string       url;
+        const std::string       method;
         std::map<std::string, std::string> headers;
 
+        req_module                  module;
+        int                         object;
+        std::vector<std::string>    parameters;
+        Resource                   *resource;
+
+    private:
+        const MHD_Connection*   connection;
+        struct MHD_Response *response;
+        void parseURL();
         static int headerIterator(void *, enum MHD_ValueKind, const char *, const char *);
 };
 

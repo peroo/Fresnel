@@ -14,6 +14,8 @@ class Metadata;
 class Audio : public Resource {
     public:
         virtual bool load(int output);
+        virtual bool load();
+        virtual std::string getMimetype();
         int read(int pos, int max, char *buffer);
         Metadata* getMetadata();
 

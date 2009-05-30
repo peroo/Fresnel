@@ -20,6 +20,25 @@ namespace fs = boost::filesystem;
 int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
 {
     HttpRequest *req = new HttpRequest(connection, url, method);
+    req->init();
+
+    Database *db = new Database();
+
+    if(req->module == Resource) {
+        Resource *res;
+        int type = db->getResourceType();
+        if(type == Audio) {
+            res = new Audio();
+        }
+        else if(type == Image) {
+            res = new Image();
+        }
+
+        res->init(req->object);
+        res->load();
+        req->renderResource(res);
+    }
+
     return req->Process();
 }
 

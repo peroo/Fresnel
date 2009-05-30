@@ -43,6 +43,16 @@ bool Audio::load(int output)
     return true;
 }
 
+bool Audio::load()
+{
+    return Audio::load(SLING_VORBIS);
+}
+
+std::string Audio:getMimetype()
+{
+    return encoder->mimetype;
+}
+
 int Audio::read(int pos, int max, char *buffer)
 {
     return encoder->read(pos, max, buffer);

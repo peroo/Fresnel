@@ -5,9 +5,13 @@
 
 #include <vorbis/vorbisenc.h>
 
+#include <string>
+
 class VorbisEncoder: public AudioEncoder {
     public:
+        VorbisEncoder() : mimetype("audio/ogg") {}
         bool start();
+        const std::string mimetype;
         
     private:
         void close();

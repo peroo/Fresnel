@@ -9,14 +9,33 @@ class Audio;
 
 class Database {
     public:
-        bool init(const char *filename);
-        static bool createTables();
-        static int insertDir(const boost::filesystem::path &path, int parent, int type);
-        static bool insertAudio(const boost::filesystem::path &file, int path);
+        Database() : paramIndex(0) {}
+        ~Database();
+
+        bool createTables();
+        int insertDir(const boost::filesystem::path &path, int parent, int type);
+        int insertAudio(const boost::filesystem::path &file, int path);
+        int getResourceType(int id);
+        std::string getResourcePath(int id);
+
+        static bool selectDB(std::string filename);
     private:
         static sqlite3 *db;
-        static int insertFile(const boost::filesystem::path &file, int path);
-        static bool insert(std::string query);
+
+        sqlite3_stmt *statement;
+        int paramIndex;
+        int stepIndex;
+
+        void insert(std::string);
+
+        void            query(std::string query);
+        bool            step();
+        void            bindInt(int value);
+        void            bindString(std::string value);
+        int             getInt();
+        std::string     getString();
+
+        int insertFile(const boost::filesystem::path &file, int path);
 };
 
 #endif

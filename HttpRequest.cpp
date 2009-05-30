@@ -1,16 +1,56 @@
 #include "HttpRequest.h"
 #include "Resource.h"
 #include "Audio/Audio.h"
+#include "Image/Image.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <microhttpd.h>
 
-#include <string>
 #include <iostream>
 #include <pthread.h>
 
 namespace fs = boost::filesystem;
+
+bool HttpRequest::init()
+{
+    MHD_get_connection_values(connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
+
+    parseURL();
+
+    return true;
+}
+
+void parseURL()
+{
+    if(url[url.size() - 1] != '/')
+        url += '/';
+    
+    int index = 0;
+    int pos = url.find_first_of('/');
+    int end = url.find_last_of('/');
+    while(pos != end) {
+        int next = url.find_firsT_of('/', pos + 1);
+
+        std::string substr = url.substr(pos + 1, next - pos - 1);
+        if(index == 0) {
+            if(substr == "resource")
+                module = Resource;
+            else if(substr == "data")
+                module = Data;
+            else
+                module = NULL;
+        }
+        else if(index == 1) {
+            object = substr;
+        }
+        else {
+            parameters.insert(substr);
+        }
+        
+        ++index;
+        pos = next;
+    }
+}
 
 int HttpRequest::headerIterator(void *map, enum MHD_ValueKind kind, const char *key, const char *value)
 {
@@ -19,11 +59,15 @@ int HttpRequest::headerIterator(void *map, enum MHD_ValueKind kind, const char *
     return MHD_YES;
 }
 
-int callback(void *cls, uint64_t pos, char *buf, int max)
+void HttpRequest::renderResource(Resource *res)
 {
-    return static_cast<Resource*>(cls)->read(pos, max, buf);
+    response = MHD_create_response_from_callback(-1, 32*1024, Resource::staticReader, res, NULL);
+    MHD_add_response_header(response, "content-type", (res->getMimetype() + "; charset=utf-8").c_str());
+    int ret = MHD_queue_response(connection, 200, response);
+    MHD_destroy_response(response);
 }
 
+/*
 int HttpRequest::Process()
 {
 	int result, statusCode;
@@ -32,7 +76,6 @@ int HttpRequest::Process()
 	fs::path path = base / "template" / fragment;
 
 	struct MHD_Response *response;
-    MHD_get_connection_values(connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
 
     // Determine response
     if(fragment.find("/resource/") == 0) {

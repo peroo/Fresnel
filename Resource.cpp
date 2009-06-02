@@ -1,12 +1,14 @@
 #include "Resource.h"
+#include "Database.h"
 
 #include <boost/filesystem/convenience.hpp>
+#include <iostream>
 
 namespace fs = boost::filesystem;
 
 bool Resource::load(int index) {}
 bool Resource::load() {}
-std::String Resource::getMimetype() {}
+std::string Resource::getMimetype() {}
 int Resource::read(int pos, int max, char *buffer) {}
 
 bool Resource::init(int index)
@@ -17,6 +19,8 @@ bool Resource::init(int index)
     Database db = Database();
     path = db.getResourcePath(index);
     extension = fs::extension(path);
+
+    std::cout << "Opening resource: " << path << std::endl;
 
     return true;
 }
@@ -35,7 +39,7 @@ bool Resource::init(boost::filesystem::path _path)
     return true;
 }
 
-int Resource::staticReader(void *res, int pos, char *buffer, int max)
+int Resource::staticReader(void *res, uint64_t pos, char *buffer, int max)
 {
     return static_cast<Resource*>(res)->read(pos, max, buffer);
 }

@@ -1,7 +1,10 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include "../Resource.h"
+
 #include <string>
+#include <vector>
 
 enum imgFormat {JPEG, PNG};
 enum interpolation {BILINEAR, BICUBIC};
@@ -12,22 +15,29 @@ struct pixel {
     unsigned char b;
 };
 
-class Image {
+class Image : public Resource {
     public:
         Image() {}
-        bool open(const std::string filename);
-        bool write(const char *filename, int format);
-        bool resize(int x, int y, const int interpolation);
-        std::string scanBarcode();
+
+        bool load();
+        bool load(int index);
+        int read(int pos, int max, char *buffer);
+        std::string getMimetype();
+
     private:
         int width;
         int height;
         pixel *bitmap;
+        std::vector<char> output;
+
+        bool open();
+        bool resize(int x, int y, const int interpolation);
+        std::string scanBarcode();
 
         bool decodeJPEG(const std::string filename);
         bool decodePNG(const std::string filename);
 
-        void writeJPEG(const char *filename);
+        void encodeJPEG();
 
         inline double weighted_sum(const double dx, const double dy, const int p0, const int p1, const int p2, const int p3);
         inline double cubic_spline_fit(double dx, double pt0, double pt1, double pt2, double pt3);

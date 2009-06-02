@@ -5,16 +5,17 @@
 #include <string>
 
 struct sqlite3;
-class Audio;
+struct sqlite3_stmt;
 
 class Database {
     public:
-        Database() : paramIndex(0) {}
+        Database() {}
         ~Database();
 
         bool createTables();
         int insertDir(const boost::filesystem::path &path, int parent, int type);
         int insertAudio(const boost::filesystem::path &file, int path);
+        int insertImage(const boost::filesystem::path &file, int path);
         int getResourceType(int id);
         std::string getResourcePath(int id);
 
@@ -24,7 +25,7 @@ class Database {
 
         sqlite3_stmt *statement;
         int paramIndex;
-        int stepIndex;
+        int colIndex;
 
         void insert(std::string);
 
@@ -35,7 +36,7 @@ class Database {
         int             getInt();
         std::string     getString();
 
-        int insertFile(const boost::filesystem::path &file, int path);
+        int insertFile(const boost::filesystem::path &file, int path, int type);
 };
 
 #endif

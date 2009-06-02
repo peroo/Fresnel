@@ -11,6 +11,7 @@ namespace fs = boost::filesystem;
 
 Indexer::Indexer()
 {
+    db = new Database();
 }
 
 int Indexer::addFolder(const std::string &directory)
@@ -36,8 +37,9 @@ int Indexer::addFolder(const std::string &directory)
 int Indexer::scanFolder(const fs::path &dir, int parent)
 {
     int count = 0, dirID;
+
     
-    dirID = Database::insertDir(dir, parent, NULL);
+    dirID = db->insertDir(dir, parent, NULL);
     std::cout << "Folder:\t\"" << dir.leaf() << "\"" << std::endl << "===================================" << std::endl;
 
     fs::directory_iterator endIter;
@@ -61,11 +63,22 @@ bool Indexer::scanFile(const fs::path &file, int path)
 {
 
     std::string ext = fs::extension(file);
+    int index = -1;
     if(ext == ".flac" || ext == ".ogg") {
-        std::cout << "Audio:\t\"" << file.leaf() << "\"" << std::endl;
-        Database::insertAudio(file, path);
+        std::cout << "Audio:\t\"" << file.leaf() << "\" ----- ";
+        index = db->insertAudio(file, path);
+    }
+    else if(ext == ".jpg" || ext == ".jpeg" || ext == ".png") {
+        std::cout << "Image:\t\"" << file.leaf() << "\" ----- ";
+        index = db->insertImage(file, path);
+    }
+
+    if(index > 0) {
+        std::cout << " Inserted correctly, index #" << index << "." << std::endl;
         return true;
     }
-    
-    return false;
+    else {
+        std::cout << " insertion failed." << std::endl;
+        return false;
+    }
 }

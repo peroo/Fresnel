@@ -3,7 +3,8 @@
 #include "JSDatabase.h"
 #include "JavaScript.h"
 #include "HttpRequest.h"
-#include "Image.h"
+#include "Audio/Audio.h"
+#include "Image/Image.h"
 #include "Indexer.h"
 
 #include <boost/filesystem/operations.hpp>
@@ -24,22 +25,22 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
 
     Database *db = new Database();
 
-    if(req->module == Resource) {
+    if(req->module == RESOURCE) {
         Resource *res;
-        int type = db->getResourceType();
-        if(type == Audio) {
+        int type = db->getResourceType(atoi(req->object.c_str()));
+        if(type == AUDIO) {
             res = new Audio();
         }
-        else if(type == Image) {
+        else if(type == IMAGE) {
             res = new Image();
         }
 
-        res->init(req->object);
+        res->init(atoi(req->object.c_str()));
         res->load();
         req->renderResource(res);
     }
 
-    return req->Process();
+    return 1;
 }
 
 bool Slingshot::init() {
@@ -53,12 +54,12 @@ bool Slingshot::init() {
 	chdir(Slingshot::base.directory_string().c_str());
 
 	// Init SQLite
-    Database *db = new Database();
-    if(!db->init("db.sqlite")) {
+    if(!Database::selectDB("db.sqlite")) {
         std::cout << "SQL initialization failed." << std::endl;
         return false;
 	}
-    db->createTables();
+    Database db = Database();
+    db.createTables();
 
 	// Init MHD
 	server = MHD_start_daemon(
@@ -92,9 +93,9 @@ int main(void)
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
-    Indexer test = Indexer();
-    std::string path = string("/home/peroo/raid/Flac/Fantastic Plastic Machine/");
-    test.addFolder(path);
+    /*Indexer test = Indexer();
+    std::string path = string("/home/peroo/test/");
+    test.addFolder(path);*/
 
     sleep(600);
 

@@ -23,10 +23,12 @@ void* encode(void *encoder)
 
 bool Audio::load(int output)
 {
+    std::cout << "EXTENSION: " << extension << std::endl;
     if(extension == ".flac") {
         decoder = new FLACDecoder(path);
     }
     if(output == SLING_VORBIS) {
+        std::cout << "Encoding in VORBIS..." << std::endl;
         // TODO: Use channel count from decoder
         encoder = new VorbisEncoder();
         encoder->init(2, 0.2);
@@ -48,7 +50,7 @@ bool Audio::load()
     return Audio::load(SLING_VORBIS);
 }
 
-std::string Audio:getMimetype()
+std::string Audio::getMimetype()
 {
     return encoder->mimetype;
 }

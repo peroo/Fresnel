@@ -9,26 +9,49 @@
 #include <iostream>
 #include <setjmp.h>
 
-bool Image::open(const std::string filename) {
-    std::string extension = filename.substr(filename.find_last_of(".")+1);
-
-    if(extension == "jpg" || extension == "JPG" || 
-       extension == "jpeg" || extension == "JPEG") {
-        decodeJPEG(filename);
-    } else if(extension == "png" || extension == "PNG") {
-        decodePNG(filename);
+bool Image::load(int format)
+{
+    open();
+    resize(800, 600, BICUBIC);
+    if(format == JPEG) {
+        encodeJPEG();
     }
-    return true;
 }
 
-bool Image::write(const char *filename, int type) {
-    switch(type) {
-        case JPEG:
-            writeJPEG(filename);
-            break;
-        case PNG:
-            break;
+bool Image::load()
+{
+    Image::load(JPEG);
+}
+
+std::string Image::getMimetype()
+{
+    return "image/jpeg";
+}
+
+int Image::read(int pos, int max, char *buffer)
+{
+    int count = pos + max > output.size() ? output.size() - pos : max;
+    memcpy(buffer, &output[pos], count);
+    if(count > 0)
+        return count;
+    else 
+        return -1;
+}
+
+bool Image::open()
+{
+
+    if(extension == ".jpg" || extension == ".jpeg") {
+        decodeJPEG(path.string());
     }
+    else if(extension == ".png") {
+        decodePNG(path.string());
+    }
+    else {
+        std::cout << "Unsupported image format: " << extension << std::endl;
+        return false;
+    }
+    return true;
 }
 
 bool Image::decodePNG(std::string filename) {
@@ -199,18 +222,80 @@ bool Image::decodeJPEG(std::string filename)
     return true;
 }
 
-void Image::writeJPEG(const char *filename)
+struct imagetojpeg_dst { 
+        struct jpeg_destination_mgr jdst; 
+        JOCTET *buf; 
+        JOCTET *off; 
+        size_t sz; 
+        size_t used; 
+
+}; 
+
+void imagetojpeg_dst_init(j_compress_ptr cinfo) 
+{ 
+        imagetojpeg_dst *dst = (imagetojpeg_dst *)cinfo->dest; 
+
+        dst->used = 0; 
+        dst->sz = cinfo->image_width 
+                * cinfo->image_height 
+                * cinfo->input_components / 8;  /* 1/8th of raw size */ 
+        dst->buf = (JOCTET *)malloc(dst->sz * sizeof dst->buf); 
+        dst->off = dst->buf; 
+        dst->jdst.next_output_byte = dst->off; 
+        dst->jdst.free_in_buffer = dst->sz; 
+
+        return; 
+
+} 
+
+boolean imagetojpeg_dst_empty(j_compress_ptr cinfo) 
+{ 
+        imagetojpeg_dst *dst = (imagetojpeg_dst *)cinfo->dest; 
+
+        dst->used = dst->sz - dst->jdst.free_in_buffer;
+        dst->sz *= 2; 
+        dst->buf = (JOCTET *)realloc((void *)dst->buf, dst->sz * sizeof dst->buf); 
+        dst->off = dst->buf + dst->used; 
+        dst->jdst.next_output_byte = dst->off; 
+        dst->jdst.free_in_buffer = dst->sz - dst->used; 
+
+        return TRUE;
+
+} 
+
+void imagetojpeg_dst_term(j_compress_ptr cinfo) 
+{ 
+        struct imagetojpeg_dst *dst = (imagetojpeg_dst *)cinfo->dest; 
+
+        dst->used += dst->sz - dst->jdst.free_in_buffer; 
+        dst->off = dst->buf + dst->used; 
+
+        return; 
+
+} 
+
+void imagetojpeg_dst_set(j_compress_ptr cinfo, struct imagetojpeg_dst *dst) 
+{ 
+        dst->jdst.init_destination = imagetojpeg_dst_init; 
+        dst->jdst.empty_output_buffer = imagetojpeg_dst_empty; 
+        dst->jdst.term_destination = imagetojpeg_dst_term; 
+        cinfo->dest = (jpeg_destination_mgr *)dst;
+
+        return; 
+
+}
+
+void Image::encodeJPEG()
 {
     jpeg_compress_struct cinfo;
     jpeg_error_mgr jerr;
 
-    FILE *output;
+    imagetojpeg_dst dst;
 
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
 
-    output = fopen(filename, "wb");
-    jpeg_stdio_dest(&cinfo, output);
+    imagetojpeg_dst_set(&cinfo, &dst);
 
     cinfo.image_width = width;
     cinfo.image_height = height;
@@ -243,7 +328,7 @@ void Image::writeJPEG(const char *filename)
 
     jpeg_finish_compress(&cinfo);
 
-    fclose(output);
+    output.insert(output.begin(), dst.buf, dst.buf + dst.used);
 
     jpeg_destroy_compress(&cinfo);
 }

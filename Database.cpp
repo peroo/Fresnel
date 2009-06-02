@@ -6,15 +6,18 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <sqlite3.h>
+
 #include <iostream>
+#include <string>
 #include <map>
 
 sqlite3 *Database::db;
 
 namespace fs = boost::filesystem;
 
-Database::~Database() {
-    sqlite3_finalize(statement);
+Database::~Database() 
+{
+    //sqlite3_finalize(statement);
 }
 
 bool Database::selectDB(std::string filename)
@@ -33,7 +36,7 @@ int Database::getResourceType(int id)
 
 std::string Database::getResourcePath(int id)
 {
-    query("SELECT path || filename FROM resource JOIN path WHERE id = ?");
+    query("SELECT path || '/' || filename FROM resource JOIN path WHERE id = ?");
     bindInt(id);
     step();
 
@@ -42,15 +45,15 @@ std::string Database::getResourcePath(int id)
 
 int Database::insertAudio(const fs::path &file, int path)
 {
-    int id = insertFile(file, path);
+    int id = insertFile(file, path, AUDIO);
     if(id <= 0) {
         std::cout << "File not inserted properly, aborting audio insert" << std::endl;
         return -1;
     }
 
-    Audio *audio = Audio();
-    audio->init(file);
-    Metadata *meta = audio->getMetadata();
+    Audio audio = Audio();
+    audio.init(file);
+    Metadata *meta = audio.getMetadata();
 
     query("INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?)");
     bindInt(id);
@@ -66,11 +69,26 @@ int Database::insertAudio(const fs::path &file, int path)
     return sqlite3_last_insert_rowid(db);
 }
 
+int Database::insertImage(const fs::path &file, int path)
+{
+    int id = insertFile(file, path, IMAGE);
+    if(id <= 0) {
+        std::cout << "File not inserted properly, aborting image insert" << std::endl;
+        return -1;
+    }
+
+    query("INSERT INTO image (title) VALUES (?)");
+    bindString("bilde");
+    step();
+
+    return sqlite3_last_insert_rowid(db);
+}
+
 int Database::insertDir(const fs::path &path, int parent, int type)
 {
     query("INSERT INTO path (path, parent) VALUES (?, ?)");
 
-    bindString(parent ? path.leaf() : path.file_string());
+    bindString(path.branch_path().string());
     bindInt(parent);
     bindInt(type);
 
@@ -79,13 +97,13 @@ int Database::insertDir(const fs::path &path, int parent, int type)
     return sqlite3_last_insert_rowid(db); 
 }
 
-int Database::insertFile(const fs::path &file, int path)
+int Database::insertFile(const fs::path &file, int path, int type)
 {
     query("INSERT INTO resource (path_id, filename, type, size) VALUES (?, ?, ?, ?)");
 
     bindInt(1);
-    bindString(file.parent_path().string());
-    bindInt(1);
+    bindString(file.leaf());
+    bindInt(type);
     bindInt(fs::file_size(file));
 
     step();
@@ -126,20 +144,25 @@ bool Database::createTables()
         album TEXT, \
         tracknumber INTEGER, \
         mbid_tid TEXT)";
+    std::string image = "CREATE TABLE IF NOT EXISTS image ( \
+        id INTEGER PRIMARY KEY, \
+        title TEXT)";
 
     insert(path);
     insert(resource);
     insert(type);
     insert(category);
     insert(audioTrack);
+    insert(image);
 
     return true;
 }
 
 void Database::query(std::string query)
 {
-    if(statement != NULL)
-        sqlite3_finalize(statement);
+    paramIndex = 0;
+    /*if(statement != NULL)
+        sqlite3_finalize(statement);*/
 
     int result = sqlite3_prepare_v2(
         db,
@@ -151,37 +174,36 @@ void Database::query(std::string query)
     if(result != SQLITE_OK) {
         std::cout << "Query preparation failed: Error #" << result << std::endl << query.c_str() << std::endl;
         std::cout << sqlite3_errmsg(db) << std::endl;
-        return false;
     }
 }
 
 void Database::bindInt(int value)
 {
-    sqlite3_bind_int(statement, ++paramIndex, value);
+    int result = sqlite3_bind_int(statement, ++paramIndex, value);
 }
 void Database::bindString(std::string value)
 {
-    sqlite3_bind_text(statement, ++paramIndex, value.c_str(), value.size() + 1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(statement, ++paramIndex, value.c_str(), value.size(), SQLITE_TRANSIENT);
 }
 int Database::getInt()
 {
-    sqlite3_column_int(statement, ++colIndex);
+    return sqlite3_column_int(statement, colIndex++);
 }
 std::string Database::getString()
 {
-    return std::string(sqlite3_column_text(statement, ++colIndex), sqlite3_column_bytes(statement, colIndex));
+    return std::string((const char *)sqlite3_column_text(statement, colIndex++));
 }
 
 bool Database::step()
 {
     colIndex = 0;
     int result = sqlite3_step(statement);
-    if(result == SQLITE_OK)
+    if(result == SQLITE_ROW)
         return true;
     else if(result == SQLITE_DONE)
         return false;
     else {
-        std::cout << "DB step failed: Error #" << result << std::endl << query.c_str() << std::endl;
+        std::cout << "DB step failed: Error #" << result << std::endl;
         std::cout << sqlite3_errmsg(db) << std::endl;
         return false;
     }

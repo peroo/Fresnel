@@ -55,7 +55,7 @@ bool VorbisEncoder::start()
     std::vector<int>::iterator sampleIter;
 
     time_t start = time(NULL);
-    ProfilerStart("/home/peroo/server/out.prof");
+    //ProfilerStart("/home/peroo/server/out.prof");
     while(feeding || (buffer.front().size() - pos) > 0) {
         size = buffer.front().size();
         count = size - pos < max ? size - pos : max;
@@ -91,7 +91,7 @@ bool VorbisEncoder::start()
             }
         }
     }
-    ProfilerStop();
+    //ProfilerStop();
     time_t end = time(NULL);
 
     buffer.clear();

@@ -1,7 +1,5 @@
 #include "HttpRequest.h"
 #include "Resource.h"
-#include "Audio/Audio.h"
-#include "Image/Image.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -20,7 +18,7 @@ bool HttpRequest::init()
     return true;
 }
 
-void parseURL()
+void HttpRequest::parseURL()
 {
     if(url[url.size() - 1] != '/')
         url += '/';
@@ -29,22 +27,20 @@ void parseURL()
     int pos = url.find_first_of('/');
     int end = url.find_last_of('/');
     while(pos != end) {
-        int next = url.find_firsT_of('/', pos + 1);
+        int next = url.find_first_of('/', pos + 1);
 
         std::string substr = url.substr(pos + 1, next - pos - 1);
         if(index == 0) {
             if(substr == "resource")
-                module = Resource;
+                module = RESOURCE;
             else if(substr == "data")
-                module = Data;
-            else
-                module = NULL;
+                module = DATA;
         }
         else if(index == 1) {
             object = substr;
         }
         else {
-            parameters.insert(substr);
+            parameters.push_back(substr);
         }
         
         ++index;

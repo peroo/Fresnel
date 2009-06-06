@@ -36,7 +36,7 @@ int Database::getResourceType(int id)
 
 std::string Database::getResourcePath(int id)
 {
-    query("SELECT path || '/' || filename FROM resource JOIN path WHERE id = ?");
+    query("SELECT path || filename FROM resource JOIN path USING (path_id) WHERE id = ?");
     bindInt(id);
     step();
 
@@ -77,7 +77,8 @@ int Database::insertImage(const fs::path &file, int path)
         return -1;
     }
 
-    query("INSERT INTO image (title) VALUES (?)");
+    query("INSERT INTO image (id, title) VALUES (?, ?)");
+    bindInt(id);
     bindString("bilde");
     step();
 
@@ -88,7 +89,8 @@ int Database::insertDir(const fs::path &path, int parent, int type)
 {
     query("INSERT INTO path (path, parent) VALUES (?, ?)");
 
-    bindString(path.branch_path().string());
+    fs::path dir = path.leaf() == "." ? path : path / "/";
+    bindString(dir.string());
     bindInt(parent);
     bindInt(type);
 
@@ -101,7 +103,7 @@ int Database::insertFile(const fs::path &file, int path, int type)
 {
     query("INSERT INTO resource (path_id, filename, type, size) VALUES (?, ?, ?, ?)");
 
-    bindInt(1);
+    bindInt(path);
     bindString(file.leaf());
     bindInt(type);
     bindInt(fs::file_size(file));

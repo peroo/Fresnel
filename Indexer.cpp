@@ -78,7 +78,7 @@ bool Indexer::scanFile(const fs::path &file, int path)
         return true;
     }
     else {
-        std::cout << " insertion failed." << std::endl;
+        std::cout << file.leaf() << " - insertion ignored/failed." << std::endl;
         return false;
     }
 }

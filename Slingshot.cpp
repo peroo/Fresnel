@@ -14,6 +14,7 @@
 
 #include <cstdio>
 #include <stdint.h>
+#include <unistd.h>
 #include <iostream>
 
 namespace fs = boost::filesystem;
@@ -84,6 +85,7 @@ void Slingshot::StopServer()
 
 int main(void)
 {
+    unlink("/home/peroo/.slingshot/db.sqlite");
     Slingshot *slingshot = new Slingshot();
     slingshot->init();
     
@@ -93,11 +95,13 @@ int main(void)
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
-    /*Indexer test = Indexer();
-    std::string path = string("/home/peroo/test/");
-    test.addFolder(path);*/
+    Indexer test = Indexer();
+    std::string path = string("/home/peroo/raid/inc/Flac/Glass Candy/");
+    test.addFolder(path);
 
-    sleep(600);
+    while(1) {
+        sleep(600);
+    }
 
     slingshot->StopServer();
 

@@ -12,7 +12,6 @@
 bool Image::load(int format)
 {
     open();
-    resize(800, 600, BICUBIC);
     if(format == JPEG) {
         encodeJPEG();
     }

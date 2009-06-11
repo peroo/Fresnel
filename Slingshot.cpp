@@ -38,7 +38,23 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
 
         res->init(atoi(req->object.c_str()));
         res->load();
-        req->renderResource(res);
+        req->render(res);
+    }
+    else if(req->module == DATA) {
+        JavaScript script = JavaScript();
+        script.run(req);
+        req->render(&script);
+    }
+    else if(req->module == STATIC_FILE) {
+        fs::path path = fs::path("public_html/") / req->object;
+        if(fs::exists(path)) {
+            std::cout << path.string() << std::endl;
+            req->render(path);
+        }
+        else {
+            std::cout << path.string() << " - 404" << std::endl;
+            req->fail(404);
+        }
     }
 
     return 1;
@@ -96,7 +112,7 @@ int main(void)
     test.write("test.jpg", JPEG);*/
 
     Indexer test = Indexer();
-    std::string path = string("/home/peroo/raid/inc/Flac/Glass Candy/");
+    std::string path = "/home/peroo/raid/inc/Flac/Glass Candy/";
     test.addFolder(path);
 
     while(1) {

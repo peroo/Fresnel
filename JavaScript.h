@@ -5,55 +5,29 @@
 #include <string>
 #include <map>
 
-using namespace std;
-using namespace v8;
-
-class JSDatabase;
 class HttpRequest;
 
-/**
- * An http request processor that is scriptable using JavaScript.
- */
-class JsHttpRequestProcessor {
- public:
+class JavaScript {
+    public:
+        bool run(HttpRequest *req);
+        std::string getResult();
+        static void Log(const char* message);
+    private:
 
-  // Creates a new processor that processes requests by invoking the
-  // Process function of the JavaScript script given as an argument.
-  explicit JsHttpRequestProcessor(Handle<String> script) : script_(script) { }
-  ~JsHttpRequestProcessor();
+        std::string result;
 
-  bool Initialize(string* output);
-  bool Process(HttpRequest* req);
+        static v8::Persistent<v8::ObjectTemplate> request_template;
 
-  static void Log(const char* event);
-
- private:
-
-  // Execute the script associated with this processor and extract the
-  // Process function.  Returns true if this succeeded, otherwise false.
-  bool ExecuteScript(Handle<String> script);
-
-  // Constructs the template that describes the JavaScript wrapper
-  // type for requests.
-  static Handle<ObjectTemplate> MakeRequestTemplate();
+  static bool ExecuteScript(v8::Handle<v8::String> script);
+  static v8::Handle<v8::ObjectTemplate> MakeRequestTemplate();
+  static v8::Handle<v8::Object> WrapRequest(HttpRequest* obj);
+  static HttpRequest* UnwrapRequest(v8::Handle<v8::Object> obj);
 
   // Callbacks that access the individual fields of request objects.
-  static Handle<Value> GetPath(Local<String> name, const AccessorInfo& info);
-  static Handle<Value> GetReferrer(Local<String> name,
-                                   const AccessorInfo& info);
-  static Handle<Value> GetHost(Local<String> name, const AccessorInfo& info);
-  static Handle<Value> GetUserAgent(Local<String> name,
-                                    const AccessorInfo& info);
+  static v8::Handle<v8::Value> GetPath(v8::Local<v8::String> name, const v8::AccessorInfo& info);
+  static v8::Handle<v8::Value> GetHost(v8::Local<v8::String> name, const v8::AccessorInfo& info);
+  static v8::Handle<v8::Value> GetReferrer(v8::Local<v8::String> name, const v8::AccessorInfo& info);
+  static v8::Handle<v8::Value> GetUserAgent(v8::Local<v8::String> name, const v8::AccessorInfo& info);
 
-
-  // Utility methods for wrapping C++ objects as JavaScript objects,
-  // and going back again.
-  static Handle<Object> WrapRequest(HttpRequest* obj);
-  static HttpRequest* UnwrapRequest(Handle<Object> obj);
-
-  Handle<String> script_;
-  Persistent<Context> context_;
-  Persistent<Function> process_;
-  static Persistent<ObjectTemplate> request_template_;
 };
 #endif

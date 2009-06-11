@@ -54,8 +54,6 @@ int Indexer::scanFolder(const fs::path &dir, int parent)
         }
     }
 
-    std::cout << std::endl;
-
     return count;
 }
 
@@ -72,13 +70,16 @@ bool Indexer::scanFile(const fs::path &file, int path)
         std::cout << "Image:\t\"" << file.leaf() << "\" ----- ";
         index = db->insertImage(file, path);
     }
+    else {
+        return false;
+    }
 
     if(index > 0) {
         std::cout << " Inserted correctly, index #" << index << "." << std::endl;
         return true;
     }
     else {
-        std::cout << file.leaf() << " - insertion ignored/failed." << std::endl;
+        std::cout << file.leaf() << " - insertion failed." << std::endl;
         return false;
     }
 }

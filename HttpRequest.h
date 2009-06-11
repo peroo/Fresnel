@@ -5,28 +5,35 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <microhttpd.h>
+#include <boost/filesystem/path.hpp>
 
 #include <string>
 #include <vector>
 #include <map>
 
 class Resource;
+class JavaScript;
 
 enum req_module {
     RESOURCE,
-    DATA
+    DATA,
+    STATIC_FILE 
 };
 
-/**
- * A simplified http request.
- */
 class HttpRequest {
     public:
         HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method) : connection(_connection), url(_url), method(_method) {}
         bool init();
-        void renderResource(Resource *res);
+        void render(Resource *res);
+        void render(JavaScript *script);
+        void render(boost::filesystem::path path);
+
+        void fail(int status);
 
         std::string       url;
+        std::string       referrer;
+        std::string       userAgent;
+        std::string       host;
         std::string       method;
         std::map<std::string, std::string> headers;
 

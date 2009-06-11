@@ -1,33 +1,30 @@
 
 #include "JavaScript.h"
-#include "JSDatabase.h"
 #include "HttpRequest.h"
 
 #include <v8.h>
 
+#include <cstdio>
+#include <iostream>
 #include <string>
 #include <map>
 
-using namespace std;
 using namespace v8;
 
-// -------------------------
-// --- P r o c e s s o r ---
-// -------------------------
-
+Persistent<ObjectTemplate> JavaScript::request_template;
 
 static Handle<Value> LogCallback(const Arguments& args) {
   if (args.Length() < 1) return v8::Undefined();
   HandleScope scope;
   Handle<Value> arg = args[0];
   String::Utf8Value value(arg);
-  JsHttpRequestProcessor::Log(*value);
+  JavaScript::Log(*value);
   return v8::Undefined();
 }
 
 
 // Reads a file into a v8 string.
-v8::Handle<v8::String> ReadFile(const string& name) {
+v8::Handle<v8::String> ReadFile(const std::string& name) {
   FILE* file = fopen(name.c_str(), "rb");
   if (file == NULL) return v8::Handle<v8::String>();
 
@@ -47,60 +44,57 @@ v8::Handle<v8::String> ReadFile(const string& name) {
   return result;
 }
 
-// Execute the script and fetch the Process method.
-bool JsHttpRequestProcessor::Initialize(string* output) {
+std::string JavaScript::getResult()
+{
+    return result;
+}
+
+bool JavaScript::run(HttpRequest *req)
+{
   // Create a handle scope to hold the temporary references.
   HandleScope handle_scope;
+
+  v8::Handle<v8::String> source = ReadFile("scripts/" + req->object + ".js");
 
   // Create a template for the global object where we set the
   // built-in global functions.
   Handle<ObjectTemplate> global = ObjectTemplate::New();
   global->Set(String::New("log"), FunctionTemplate::New(LogCallback));
-
+/*
   Handle<ObjectTemplate> sql = ObjectTemplate::New();
   sql->Set(String::New("insert"), FunctionTemplate::New(JSDatabase::Insert));
   sql->Set(String::New("select"), FunctionTemplate::New(JSDatabase::Select));
   sql->Set(String::New("update"), FunctionTemplate::New(JSDatabase::Update));
   sql->Set(String::New("delete"), FunctionTemplate::New(JSDatabase::Delete));
 
-  global->Set(String::New("SQL"), sql);
+  global->Set(String::New("SQL"), sql);*/
 
-
-  // Each processor gets its own context so different processors
-  // don't affect each other (ignore the first three lines).
   Handle<Context> context = Context::New(NULL, global);
-
-  // Enter the new context so all the following operations take place
-  // within it.
   Context::Scope context_scope(context);
 
+  context->Global()->Set(String::New("Request"), WrapRequest(req));
+
   // Compile and run the script
-  if (!ExecuteScript(script_))
+  if (!ExecuteScript(source))
     return false;
 
-  // The script compiled and ran correctly.  Now we fetch out the
-  // Process function from the global object.
   Handle<String> output_name = String::New("Output");
   Handle<Value> output_val = context->Global()->Get(output_name);
 
-  // If there is no Process function, or if it is not a function,
-  // bail out
-  if (!output_val->IsString()) {
+  if (!output_val->IsObject()) {
 	Log("No output.");
 	return false;
   }
 
-  // It is a function; cast it to a Function
-  Handle<String> output_string = Handle<String>::Cast(output_val);
+  Handle<Object> output = Handle<Object>::Cast(output_val);
 
-  *output = *(String::Utf8Value(output_string));
+  result = "bah";
 
   // All done; all went well
   return true;
 }
 
-
-bool JsHttpRequestProcessor::ExecuteScript(Handle<String> script) {
+bool JavaScript::ExecuteScript(Handle<String> script) {
   HandleScope handle_scope;
 
   // We're just about to compile the script; set up an error handler to
@@ -128,65 +122,19 @@ bool JsHttpRequestProcessor::ExecuteScript(Handle<String> script) {
   return true;
 }
 
-bool JsHttpRequestProcessor::Process(HttpRequest* request) {
-  // Create a handle scope to keep the temporary object references.
-  HandleScope handle_scope;
-
-  // Enter this processor's context so all the remaining operations
-  // take place there
-  Context::Scope context_scope(context_);
-
-  // Wrap the C++ request object in a JavaScript wrapper
-  Handle<Object> request_obj = WrapRequest(request);
-
-  // Set up an exception handler before calling the Process function
-  TryCatch try_catch;
-
-  // Invoke the process function, giving the global object as 'this'
-  // and one argument, the request.
-  const int argc = 1;
-  Handle<Value> argv[argc] = { request_obj };
-  Handle<Value> result = process_->Call(context_->Global(), argc, argv);
-  if (result.IsEmpty()) {
-    String::Utf8Value error(try_catch.Exception());
-    Log(*error);
-    return false;
-  } else {
-    return true;
-  }
-}
-
-
-JsHttpRequestProcessor::~JsHttpRequestProcessor() {
-  // Dispose the persistent handles.  When noone else has any
-  // references to the objects stored in the handles they will be
-  // automatically reclaimed.
-  context_.Dispose();
-  process_.Dispose();
-}
-
-
-Persistent<ObjectTemplate> JsHttpRequestProcessor::request_template_;
-
-// -------------------------------------------
-// --- A c c e s s i n g   R e q u e s t s ---
-// -------------------------------------------
-
-/**
- * Utility function that wraps a C++ http request object in a
- * JavaScript object.
- */
-Handle<Object> JsHttpRequestProcessor::WrapRequest(HttpRequest* request) {
+Handle<Object> JavaScript::WrapRequest(HttpRequest* request) {
   // Handle scope for temporary handles.
   HandleScope handle_scope;
 
   // Fetch the template for creating JavaScript http request wrappers.
   // It only has to be created once, which we do on demand.
-  if (request_template_.IsEmpty()) {
+  /*if (request_template.IsEmpty()) {
     Handle<ObjectTemplate> raw_template = MakeRequestTemplate();
-    request_template_ = Persistent<ObjectTemplate>::New(raw_template);
+    request_template = Persistent<ObjectTemplate>::New(raw_template);
   }
-  Handle<ObjectTemplate> templ = request_template_;
+
+  Handle<ObjectTemplate> templ = request_template;*/
+  Handle<ObjectTemplate> templ = MakeRequestTemplate();
 
   // Create an empty http request wrapper.
   Handle<Object> result = templ->NewInstance();
@@ -203,62 +151,41 @@ Handle<Object> JsHttpRequestProcessor::WrapRequest(HttpRequest* request) {
   // we need to call Close to let one, the result, escape into the
   // outer handle scope.
   return handle_scope.Close(result);
+
 }
 
-
-/**
- * Utility function that extracts the C++ http request object from a
- * wrapper object.
- */
-HttpRequest* JsHttpRequestProcessor::UnwrapRequest(Handle<Object> obj) {
+HttpRequest* JavaScript::UnwrapRequest(Handle<Object> obj) {
   Handle<External> field = Handle<External>::Cast(obj->GetInternalField(0));
   void* ptr = field->Value();
   return static_cast<HttpRequest*>(ptr);
 }
 
-
-Handle<Value> JsHttpRequestProcessor::GetPath(Local<String> name,
+Handle<Value> JavaScript::GetPath(Local<String> name,
                                               const AccessorInfo& info) {
-  // Extract the C++ request object from the JavaScript wrapper.
   HttpRequest* request = UnwrapRequest(info.Holder());
-
-  // Fetch the path.
-  //const string& path = request->Path();
-  const string& path = "test";
-
-  // Wrap the result in a JavaScript string and return it.
-  return String::New(path.c_str(), path.length());
+  return String::New(request->url.c_str(), request->url.length());
 }
 
-
-Handle<Value> JsHttpRequestProcessor::GetReferrer(Local<String> name,
+Handle<Value> JavaScript::GetReferrer(Local<String> name,
                                                   const AccessorInfo& info) {
   HttpRequest* request = UnwrapRequest(info.Holder());
-  //const string& path = request->Referrer();
-  const string& path = "test";
-  return String::New(path.c_str(), path.length());
+  return String::New(request->referrer.c_str(), request->referrer.length());
 }
 
-
-Handle<Value> JsHttpRequestProcessor::GetHost(Local<String> name,
+Handle<Value> JavaScript::GetHost(Local<String> name,
                                               const AccessorInfo& info) {
   HttpRequest* request = UnwrapRequest(info.Holder());
-  //const string& path = request->Host();
-  const string& path = "test";
-  return String::New(path.c_str(), path.length());
+  return String::New(request->host.c_str(), request->host.length());
 }
 
-
-Handle<Value> JsHttpRequestProcessor::GetUserAgent(Local<String> name,
+Handle<Value> JavaScript::GetUserAgent(Local<String> name,
                                                    const AccessorInfo& info) {
   HttpRequest* request = UnwrapRequest(info.Holder());
-  //const string& path = request->UserAgent();
-  const string& path = "test";
-  return String::New(path.c_str(), path.length());
+  return String::New(request->userAgent.c_str(), request->userAgent.length());
 }
 
 
-Handle<ObjectTemplate> JsHttpRequestProcessor::MakeRequestTemplate() {
+Handle<ObjectTemplate> JavaScript::MakeRequestTemplate() {
   HandleScope handle_scope;
 
   Handle<ObjectTemplate> result = ObjectTemplate::New();
@@ -275,9 +202,6 @@ Handle<ObjectTemplate> JsHttpRequestProcessor::MakeRequestTemplate() {
 }
 
 
-// --- Test ---
-
-
-void JsHttpRequestProcessor::Log(const char* event) {
-  printf("Logged: %s\n", event);
+void JavaScript::Log(const char* message) {
+  std::cout << "Logged: " << message << std::endl;
 }

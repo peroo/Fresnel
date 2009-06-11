@@ -8,6 +8,8 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
+#include <sstream>
 
 using namespace v8;
 
@@ -88,11 +90,82 @@ bool JavaScript::run(HttpRequest *req)
 
   Handle<Object> output = Handle<Object>::Cast(output_val);
 
-  result = "bah";
+    result = ParseHandle(output);
 
   // All done; all went well
   return true;
 }
+
+std::string JavaScript::ParseHandle(Handle<Value> value)
+{
+    HandleScope handle_scope;
+
+    if(value->IsString()) {
+        String::Utf8Value val(value);
+        return std::string("\"") + *val + "\"";
+    }
+    else if(value->IsNumber()) {
+        std::ostringstream o;
+        o << value->ToNumber()->Value();
+        return o.str();
+    }
+    else if(value->IsBoolean()) {
+        return value->ToBoolean()->Value() ? "true" : "false";
+    }
+    else if(value->IsArray()) {
+        std::vector<std::string> out;
+        Local<Array> val = Array::Cast(*value);
+        for(int i=0; i < val->Length(); ++i) {
+            Handle<Value> asd = val->Get(Number::New(i));
+            out.push_back(ParseHandle(asd));
+        }
+        
+        std::string result = "[";
+        std::vector<std::string>::iterator iter;
+        for(iter = out.begin(); iter != out.end(); iter++) {
+            result += *iter + ",";
+        }
+        if(out.size() > 0)
+            result[result.length() -1] = ']';
+        else
+            result += "]";
+        
+        return result;
+    }
+    else if(value->IsNull()) {
+        return "null";
+    }
+    else if(value->IsFunction()) {
+        return "\"function\"";
+    }
+    else if(value->IsObject()) {
+        std::vector<std::string> out;
+        Local<Object> val = value->ToObject();
+        Local<Array> arr = val->GetPropertyNames();
+        for(int i=0; i < arr->Length(); ++i) {
+            Local<Value> key = arr->Get(Number::New(i));
+
+            String::Utf8Value str(key->ToString());
+
+            Handle<Value> asd = val->Get(key);
+            out.push_back(std::string(*str) + ": " + ParseHandle(asd));
+        }
+        
+        std::string result = "{";
+        std::vector<std::string>::iterator iter;
+        for(iter = out.begin(); iter != out.end(); iter++) {
+            result += *iter + ",";
+        }
+        if(out.size() > 0)
+            result[result.length() -1] = '}';
+        else
+            result += "}";
+        
+        return result;
+    }
+}
+
+    
 
 bool JavaScript::ExecuteScript(Handle<String> script) {
   HandleScope handle_scope;

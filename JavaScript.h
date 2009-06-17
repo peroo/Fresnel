@@ -22,6 +22,7 @@ class JavaScript {
 
   static bool ExecuteScript(v8::Handle<v8::String> script);
   static v8::Handle<v8::ObjectTemplate> MakeRequestTemplate();
+  static v8::Handle<v8::ObjectTemplate> MakeSQLTemplate();
   static v8::Handle<v8::Object> WrapRequest(HttpRequest* obj);
   static HttpRequest* UnwrapRequest(v8::Handle<v8::Object> obj);
 

@@ -1,5 +1,6 @@
 
 #include "JavaScript.h"
+#include "JSDatabase.h"
 #include "HttpRequest.h"
 
 #include <v8.h>
@@ -58,23 +59,19 @@ bool JavaScript::run(HttpRequest *req)
 
   v8::Handle<v8::String> source = ReadFile("scripts/" + req->object + ".js");
 
-  // Create a template for the global object where we set the
-  // built-in global functions.
   Handle<ObjectTemplate> global = ObjectTemplate::New();
-  global->Set(String::New("log"), FunctionTemplate::New(LogCallback));
-/*
-  Handle<ObjectTemplate> sql = ObjectTemplate::New();
-  sql->Set(String::New("insert"), FunctionTemplate::New(JSDatabase::Insert));
-  sql->Set(String::New("select"), FunctionTemplate::New(JSDatabase::Select));
-  sql->Set(String::New("update"), FunctionTemplate::New(JSDatabase::Update));
-  sql->Set(String::New("delete"), FunctionTemplate::New(JSDatabase::Delete));
-
-  global->Set(String::New("SQL"), sql);*/
 
   Handle<Context> context = Context::New(NULL, global);
   Context::Scope context_scope(context);
 
-  context->Global()->Set(String::New("Request"), WrapRequest(req));
+  Handle<ObjectTemplate> sling = ObjectTemplate::New();
+  sling->Set(String::New("Log"), FunctionTemplate::New(LogCallback));
+  sling->Set(String::New("Query"), FunctionTemplate::New(JSDatabase::Query));
+
+  Handle<Object> obj = sling->NewInstance();
+  obj->Set(String::New("Request"), WrapRequest(req));
+
+  context->Global()->Set(String::New("Slingshot"), obj);
 
   // Compile and run the script
   if (!ExecuteScript(source))
@@ -90,7 +87,7 @@ bool JavaScript::run(HttpRequest *req)
 
   Handle<Object> output = Handle<Object>::Cast(output_val);
 
-    result = ParseHandle(output);
+  result = ParseHandle(output);
 
   // All done; all went well
   return true;
@@ -256,7 +253,6 @@ Handle<Value> JavaScript::GetUserAgent(Local<String> name,
   HttpRequest* request = UnwrapRequest(info.Holder());
   return String::New(request->userAgent.c_str(), request->userAgent.length());
 }
-
 
 Handle<ObjectTemplate> JavaScript::MakeRequestTemplate() {
   HandleScope handle_scope;

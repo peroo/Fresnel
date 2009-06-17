@@ -1,4 +1,5 @@
 #include "Slingshot.h"
+#include "SQLite.h"
 #include "Database.h"
 #include "JSDatabase.h"
 #include "JavaScript.h"
@@ -71,7 +72,7 @@ bool Slingshot::init() {
 	chdir(Slingshot::base.directory_string().c_str());
 
 	// Init SQLite
-    if(!Database::selectDB("db.sqlite")) {
+    if(!SQLite::selectDB("db.sqlite")) {
         std::cout << "SQL initialization failed." << std::endl;
         return false;
 	}

@@ -9,7 +9,7 @@
 
 class VorbisEncoder: public AudioEncoder {
     public:
-        VorbisEncoder() : AudioEncoder("application/ogg") {}
+        VorbisEncoder() : AudioEncoder("audio/ogg") {}
         bool start();
         const std::string mimetype;
         

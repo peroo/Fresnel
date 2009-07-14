@@ -51,11 +51,17 @@ bool VorbisEncoder::start()
     int i, j, count, size;
     int pos = 0;
     int max = 65536;
-    std::vector< std::vector<int> >::iterator channelIter;
-    std::vector<int>::iterator sampleIter;
+
+    //TODO: Quickfix to prevent encoder from preempting decoder.
+    //      0b buffer causes the encoder to fall on its face.
+    while(buffer.front().size() == 0) {
+        std::cout << "Sleeping..." << std::endl;
+        usleep(10000);
+    }
 
     time_t start = time(NULL);
     //ProfilerStart("/home/peroo/server/out.prof");
+
     while(feeding || (buffer.front().size() - pos) > 0) {
         size = buffer.front().size();
         count = size - pos < max ? size - pos : max;
@@ -94,9 +100,9 @@ bool VorbisEncoder::start()
     //ProfilerStop();
     time_t end = time(NULL);
 
-    buffer.clear();
+    std::cout << "Encoding finished in " << end - start << "s." << std::endl;
 
-    std::cout << "encoding finished in " << end - start << "s." << std::endl;
+    buffer.clear();
 
     active = false;
     close();

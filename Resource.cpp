@@ -31,7 +31,7 @@ Resource* Resource::init(int index)
     }
 
     if(resources.size() > 10) {
-        delete resource.end();
+        delete *(resources.end());
         resources.pop_back();
     }
     resources.insert(resources.begin(), this);

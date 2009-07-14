@@ -11,7 +11,7 @@ FLAC__StreamDecoderWriteStatus FLACDecoder::write_callback(const FLAC__Frame *fr
 
 void FLACDecoder::error_callback(FLAC__StreamDecoderErrorStatus status)
 {
-    //fprintf(stderr, "Got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
+    std::cout << "Got error callback: " << FLAC__StreamDecoderErrorStatusString[status] << std::endl;
 }
 
 bool FLACDecoder::start()
@@ -20,5 +20,6 @@ bool FLACDecoder::start()
     int ok = process_until_end_of_stream();
     //std::cout << "decoding ended: " << ok << std::endl;
     encoder->feedingDone();
+    delete this;
     return ok ? true : false;
 }

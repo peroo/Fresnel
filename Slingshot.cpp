@@ -48,10 +48,8 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     }
     else if(req->module == STATIC_FILE) {
         fs::path path = fs::path("public_html/") / req->object;
-        std::cout << req->object << std::endl;
-        std::cout << path.string() << std::endl;
         if(fs::exists(path)) {
-            std::cout << path.string() << std::endl;
+            std::cout << path.string() << " - 200" << std::endl;
             req->render(path);
         }
         else {

@@ -40,7 +40,7 @@ int AudioEncoder::read(int pos, int max, char *_buffer) {
 }
 
 void AudioEncoder::feedingDone() {
-    //std::cout << "Feeding done." << std::endl;
+    std::cout << "Feeding done. Buffer size " << buffer.front().size() << std::endl;
     feeding = false;
 }
 

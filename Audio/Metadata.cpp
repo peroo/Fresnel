@@ -46,8 +46,12 @@ bool Metadata::parseXiphComment(TagLib::Ogg::XiphComment *tag)
         album = map["ALBUM"].front().to8Bit(true);
     if (!map["ALBUMARTIST"].isEmpty())
         albumartist = map["ALBUMARTIST"].front().to8Bit(true);
+    if (!map["ALBUMARTISTSORT"].isEmpty())
+        albumartist_sort = map["ALBUMARTISTSORT"].front().to8Bit(true);
     if (!map["ARTIST"].isEmpty())
         artist = map["ARTIST"].front().to8Bit(true);
+    if (!map["ARTISTSORT"].isEmpty())
+        artist_sort = map["ARTISTSORT"].front().to8Bit(true);
     if (!map["MUSICBRAINZ_ALBUMARTISTID"].isEmpty())
         musicbrainz_albumartistid = map["MUSICBRAINZ_ALBUMARTISTID"].front().to8Bit(true);
     if (!map["MUSICBRAINZ_ALBUMID"].isEmpty())

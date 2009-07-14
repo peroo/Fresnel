@@ -17,7 +17,9 @@ class Metadata {
 
         std::string album;
         std::string artist;
+        std::string artist_sort;
         std::string albumartist;
+        std::string albumartist_sort;
         std::string musicbrainz_albumid;
         std::string musicbrainz_artistid;
         std::string musicbrainz_albumartistid;

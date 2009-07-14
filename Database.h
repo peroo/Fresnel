@@ -5,6 +5,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <string>
+#include <map>
 
 class Database : SQLite {
     public:
@@ -20,6 +21,11 @@ class Database : SQLite {
 
     private:
         int insertFile(const boost::filesystem::path &file, int path, int type);
+        int getArtistId(std::string artist, std::string sortname);
+        int getAlbumId(std::string title, std::string date, int artist);
+
+        std::map<std::string, int> artistCache;
+        std::map<std::string, int> albumCache;
 };
 
 #endif

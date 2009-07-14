@@ -27,6 +27,7 @@ class Image : public Resource {
     private:
         int width;
         int height;
+        int bitrate;
         pixel *bitmap;
         std::vector<char> output;
 

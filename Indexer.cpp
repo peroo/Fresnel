@@ -30,7 +30,7 @@ int Indexer::addFolder(const std::string &directory)
     } 
     
     int result = scanFolder(dir, 0);
-    std::cout << "Finished scanning " << result << " files from \"" << directory << "\".";
+    std::cout << "Finished scanning " << result << " files from \"" << directory << "\"." << std::endl;
 }
 
 int Indexer::scanFolder(const fs::path &dir, int parent)

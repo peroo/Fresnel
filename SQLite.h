@@ -12,7 +12,7 @@ class SQLite {
     protected:
         void            insert(std::string query);
         void            query(std::string query);
-        bool            step();
+        int             step();
         int             last_insert_id();
         int             rows_affected();
         void            bindInt(int value);

@@ -36,6 +36,57 @@ std::string Database::getResourcePath(int id)
     return getString();
 }
 
+int Database::getArtistId(std::string name, std::string sortname)
+{
+    int id = artistCache[name];
+    if(id)
+        return id;
+
+    query("SELECT id FROM artist \
+            WHERE name=?");
+    bindString(name);
+
+    if(step() > -1) {
+        id = getInt();
+    }
+    else {
+        query("INSERT INTO artist (name, sortname) VALUES (?, ?)");
+        bindString(name);
+        bindString(sortname);
+        step();
+        id = last_insert_id();
+    }
+
+    artistCache[name] = id;
+    return id;
+}
+
+int Database::getAlbumId(std::string title, std::string date, int artist)
+{
+    int id = albumCache[title];
+    if(id)
+        return id;
+
+    query("SELECT id FROM audio_album \
+            WHERE title=?");
+    bindString(title);
+
+    if(step() > -1) {
+        id = getInt();
+    }
+    else {
+        query("INSERT INTO audio_album (title, date, artist) VALUES (?, ?, ?)");
+        bindString(title);
+        bindString(date);
+        bindInt(artist);
+        step();
+        id = last_insert_id();
+    }
+
+    albumCache[title] = id;
+    return id;
+}
+
 int Database::insertAudio(const fs::path &file, int path)
 {
     int id = insertFile(file, path, AUDIO);
@@ -48,12 +99,11 @@ int Database::insertAudio(const fs::path &file, int path)
     audio.init(file);
     Metadata *meta = audio.getMetadata();
 
-    query("INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    query("INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     bindInt(id);
     bindString(meta->title);
-    bindString(meta->artist);
-    bindString(meta->album);
-    bindString(meta->albumartist);
+    bindInt(getArtistId(meta->artist, meta->artist_sort));
+    bindInt(getAlbumId(meta->album, meta->date, getArtistId(meta->albumartist, meta->albumartist_sort)));
     bindInt(atoi(meta->tracknumber.c_str()));
     bindInt(meta->length);
     bindInt(meta->bitrate);
@@ -113,7 +163,7 @@ bool Database::createTables()
 {
     // TODO: Remove "IF NOT EXISTS" in favour of proper db checking
     std::string resource = "CREATE TABLE IF NOT EXISTS resource ( \
-        id INTEGER PRIMARY KEY AUTOINCREMENT, \
+        id INTEGER PRIMARY KEY, \
         path_id INTEGER, \
         filename TEXT, \
         size INTEGER, \
@@ -137,13 +187,21 @@ bool Database::createTables()
     std::string audioTrack = "CREATE TABLE IF NOT EXISTS audio_track ( \
         id INTEGER PRIMARY KEY, \
         title TEXT, \
-        artist TEXT, \
-        album TEXT, \
-        album_artist TEXT, \
+        artist INTEGER, \
+        album INTEGER, \
         tracknumber INTEGER, \
         length INTEGER, \
         bitrate INTEGER, \
         mbid_tid TEXT)";
+    std::string audioAlbum = "CREATE TABLE IF NOT EXISTS audio_album ( \
+        id INTEGER PRIMARY KEY, \
+        title TEXT, \
+        artist INTEGER, \
+        date TEXT)";
+    std::string artist = "CREATE TABLE IF NOT EXISTS artist ( \
+        id INTEGER PRIMARY KEY, \
+        name TEXT, \
+        sortname TEXT)";
     std::string image = "CREATE TABLE IF NOT EXISTS image ( \
         id INTEGER PRIMARY KEY, \
         title TEXT)";
@@ -153,6 +211,8 @@ bool Database::createTables()
     insert(type);
     insert(category);
     insert(audioTrack);
+    insert(audioAlbum);
+    insert(artist);
     insert(image);
 
     return true;

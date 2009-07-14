@@ -10,7 +10,7 @@ struct MHD_Daemon;
 
 class Slingshot {
 	public:
-		bool init();
+		bool init(bool test);
 		void StopServer();
 
 	private:

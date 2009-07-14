@@ -59,18 +59,18 @@ void SQLite::getVoid()
     ++colIndex;
 }
 
-bool SQLite::step()
+int SQLite::step()
 {
     colIndex = 0;
     int result = sqlite3_step(statement);
     if(result == SQLITE_ROW)
-        return true;
+        return 1;
     else if(result == SQLITE_DONE)
-        return false;
+        return 0;
     else {
-        std::cout << "DB step failed: Error #" << result << std::endl;
-        std::cout << sqlite3_errmsg(db) << std::endl;
-        return false;
+        //std::cout << "DB step failed: Error #" << result << std::endl;
+        //std::cout << sqlite3_errmsg(db) << std::endl;
+        return -1;
     }
 }
 

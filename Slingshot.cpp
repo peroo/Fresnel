@@ -61,7 +61,7 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     return 1;
 }
 
-bool Slingshot::init() {
+bool Slingshot::init(bool test) {
 	// Setup working dir
     base = fs::path(getenv("HOME")) / ".slingshot";
 	if(!fs::exists(base)) {
@@ -71,8 +71,11 @@ bool Slingshot::init() {
 	}
 	chdir(Slingshot::base.directory_string().c_str());
 
+    std::string dbname = test ? "test.sqlite" : "db.sqlite"; 
+    std::cout << dbname << std::endl;
+
 	// Init SQLite
-    if(!SQLite::selectDB("db.sqlite")) {
+    if(!SQLite::selectDB(dbname.c_str())) {
         std::cout << "SQL initialization failed." << std::endl;
         return false;
 	}
@@ -100,10 +103,11 @@ void Slingshot::StopServer()
     MHD_stop_daemon(server);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    bool test = argc > 1 ? true : false;
     Slingshot slingshot = Slingshot();
-    slingshot.init();
+    slingshot.init(test);
     
     /*Image test = Image();
     test.open("002.jpg");

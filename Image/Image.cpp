@@ -206,19 +206,24 @@ bool Image::decodeJPEG(std::string filename)
    * In this example, we need to make an output work buffer of the right size.
    */ 
   /* JSAMPLEs per row in output buffer */
-  row_stride = cinfo.output_width * cinfo.output_components;
   width = cinfo.output_width;
   height = cinfo.output_height;
+  int comp = cinfo.output_components;
+  int stepOne = comp > 2 ? 1 : 0;
+  int stepTwo = comp > 2 ? 2 : 0;
   /* Make a one-row-high sample array that will go away when done with image */
   buffer = (*cinfo.mem->alloc_sarray)
-        ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
+        ((j_common_ptr) &cinfo, JPOOL_IMAGE, width * comp, 1);
 
     bitmap = new pixel[width * height];
     while (cinfo.output_scanline < cinfo.output_height) {
     (void) jpeg_read_scanlines(&cinfo, buffer, 1);
         for(int x = 0; x < width; x++) {
             int pos = (cinfo.output_scanline-1)*width + x;
-            bitmap[pos] = (pixel) {(*buffer)[x*3], (*buffer)[x*3 + 1], (*buffer)[x*3 + 2]};
+            bitmap[pos] = (pixel) {
+                (*buffer)[x*comp], 
+                (*buffer)[x*comp + stepOne], 
+                (*buffer)[x*comp + stepTwo]};
         }
     }
   (void) jpeg_finish_decompress(&cinfo);
@@ -242,9 +247,10 @@ void imagetojpeg_dst_init(j_compress_ptr cinfo)
         imagetojpeg_dst *dst = (imagetojpeg_dst *)cinfo->dest; 
 
         dst->used = 0; 
+        //TODO: allocating full bitmap since resizing later breaks
         dst->sz = cinfo->image_width 
                 * cinfo->image_height 
-                * cinfo->input_components / 8;  /* 1/8th of raw size */ 
+                * cinfo->input_components / 4;  /* 1/8th of raw size */ 
         dst->buf = (JOCTET *)malloc(dst->sz * sizeof dst->buf); 
         dst->off = dst->buf; 
         dst->jdst.next_output_byte = dst->off; 
@@ -309,7 +315,7 @@ void Image::encodeJPEG()
     cinfo.in_color_space = JCS_RGB;
 
     jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, 100, FALSE);
+    jpeg_set_quality(&cinfo, 70, FALSE);
 
     jpeg_start_compress(&cinfo, TRUE);
 

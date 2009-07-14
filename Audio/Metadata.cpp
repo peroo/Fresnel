@@ -18,12 +18,14 @@ bool Metadata::loadData(fs::path path)
                 parseId3v1(flac->ID3v1Tag(true));
             }
         }
+        parseProperties(flac);
         delete flac;
     }
     else if(ext == ".ogg") {
         // TODO: Vorbis is assumed even though it might be FLAC/Speex. May or may not cause fatal problems.
         TagLib::Ogg::Vorbis::File *ogg = new TagLib::Ogg::Vorbis::File(path.string().c_str(), true);
         parseXiphComment(ogg->tag());
+        parseProperties(ogg);
         delete ogg;
     }
 
@@ -62,6 +64,13 @@ bool Metadata::parseXiphComment(TagLib::Ogg::XiphComment *tag)
         date = map["DATE"].front().to8Bit(true);
 
     return true;
+}
+
+bool Metadata::parseProperties(TagLib::File *file)
+{
+    TagLib::AudioProperties *prop = file->audioProperties();
+    bitrate = prop->bitrate();
+    length = prop->length();
 }
 
 bool Metadata::parseId3v2(TagLib::ID3v2::Tag *tag)

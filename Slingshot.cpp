@@ -37,7 +37,7 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
             res = new Image();
         }
 
-        res->init(atoi(req->object.c_str()));
+        res = res->init(atoi(req->object.c_str()));
         res->load();
         req->render(res);
     }
@@ -48,6 +48,8 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     }
     else if(req->module == STATIC_FILE) {
         fs::path path = fs::path("public_html/") / req->object;
+        std::cout << req->object << std::endl;
+        std::cout << path.string() << std::endl;
         if(fs::exists(path)) {
             std::cout << path.string() << std::endl;
             req->render(path);
@@ -102,9 +104,8 @@ void Slingshot::StopServer()
 
 int main(void)
 {
-    unlink("/home/peroo/.slingshot/db.sqlite");
-    Slingshot *slingshot = new Slingshot();
-    slingshot->init();
+    Slingshot slingshot = Slingshot();
+    slingshot.init();
     
     /*Image test = Image();
     test.open("002.jpg");
@@ -112,15 +113,17 @@ int main(void)
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
-    Indexer test = Indexer();
-    std::string path = "/home/peroo/raid/inc/Flac/Glass Candy/";
-    test.addFolder(path);
+    /*Indexer index = Indexer();
+    std::string path = "/home/peroo/raid/inc/Flac/";
+    index.addFolder(path);
+    path = "/home/peroo/raid/inc/incoming/";
+    index.addFolder(path);*/
 
     while(1) {
         sleep(600);
     }
 
-    slingshot->StopServer();
+    slingshot.StopServer();
 
     return 0;
 }

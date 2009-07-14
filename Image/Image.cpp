@@ -11,15 +11,22 @@
 
 bool Image::load(int format)
 {
+    if(loaded)
+        return true;
+    else 
+        loaded = true;
+    
     open();
     if(format == JPEG) {
         encodeJPEG();
     }
+    return true;
 }
 
 bool Image::load()
 {
     Image::load(JPEG);
+    return true;
 }
 
 std::string Image::getMimetype()

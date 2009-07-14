@@ -42,6 +42,7 @@ void HttpRequest::parseURL()
             else {
                 module = STATIC_FILE;
                 object = url.substr(1, end);
+                return;
             }
         }
         else if(index == 1) {
@@ -53,6 +54,10 @@ void HttpRequest::parseURL()
         
         ++index;
         pos = next;
+    }
+
+    if(module == NULL) {
+        // Fallback
     }
 }
 
@@ -66,7 +71,7 @@ int HttpRequest::headerIterator(void *map, enum MHD_ValueKind kind, const char *
 void HttpRequest::render(Resource *res)
 {
     response = MHD_create_response_from_callback(-1, 32*1024, Resource::staticReader, res, NULL);
-    MHD_add_response_header(response, "content-type", (res->getMimetype() + "; charset=utf-8").c_str());
+    MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
     int ret = MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
@@ -86,6 +91,10 @@ static int file_reader (void *cls, uint64_t pos, char *buf, int max)
 
   fseek (file, pos, SEEK_SET);
   return fread (buf, 1, max, file);
+}
+static void file_close(void *file)
+{
+    fclose(static_cast<FILE*>(file));
 }
 static int getSize(FILE *fp)
 {
@@ -115,9 +124,11 @@ void HttpRequest::render(fs::path path)
     FILE *fp;
     fp = fopen(path.string().c_str(), "rb");
 
-    getSize(fp);
+    int size = getSize(fp);
+    const char sss = (char)size;
 
-    response = MHD_create_response_from_callback(getSize(fp), 32*1024, file_reader, fp, NULL);
+    response = MHD_create_response_from_callback(size, 32*1024, file_reader, fp, file_close);
+    MHD_add_response_header(response, "content-length", &sss);
     MHD_add_response_header(response, "content-type", (mimetype + "; charset=utf-8").c_str());
     int ret = MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);

@@ -50,7 +50,13 @@ double SQLite::getFloat()
 }
 std::string SQLite::getString()
 {
-    return std::string((const char *)sqlite3_column_text(statement, colIndex++));
+    const unsigned char* text = sqlite3_column_text(statement, colIndex);
+    int bytes = sqlite3_column_bytes(statement, colIndex++);
+    return std::string((const char*)text, bytes);
+}
+void SQLite::getVoid()
+{
+    ++colIndex;
 }
 
 bool SQLite::step()

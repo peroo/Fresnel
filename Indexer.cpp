@@ -29,9 +29,8 @@ int Indexer::addFolder(const std::string &directory)
         return 0;
     } 
     
-    return scanFolder(dir, 0);
-
-    return 0;
+    int result = scanFolder(dir, 0);
+    std::cout << "Finished scanning " << result << " files from \"" << directory << "\".";
 }
 
 int Indexer::scanFolder(const fs::path &dir, int parent)
@@ -40,7 +39,7 @@ int Indexer::scanFolder(const fs::path &dir, int parent)
 
     
     dirID = db->insertDir(dir, parent, NULL);
-    std::cout << "Folder:\t\"" << dir.leaf() << "\"" << std::endl << "===================================" << std::endl;
+    //std::cout << "Folder:\t\"" << dir.leaf() << "\"" << std::endl << "===================================" << std::endl;
 
     fs::directory_iterator endIter;
     for(fs::directory_iterator iter(dir); iter != endIter; ++iter) {
@@ -63,11 +62,11 @@ bool Indexer::scanFile(const fs::path &file, int path)
     std::string ext = fs::extension(file);
     int index = -1;
     if(ext == ".flac" || ext == ".ogg") {
-        std::cout << "Audio:\t\"" << file.leaf() << "\" ----- ";
+        //std::cout << "Audio:\t\"" << file.leaf() << "\" ----- ";
         index = db->insertAudio(file, path);
     }
     else if(ext == ".jpg" || ext == ".jpeg" || ext == ".png") {
-        std::cout << "Image:\t\"" << file.leaf() << "\" ----- ";
+        //std::cout << "Image:\t\"" << file.leaf() << "\" ----- ";
         index = db->insertImage(file, path);
     }
     else {
@@ -75,11 +74,11 @@ bool Indexer::scanFile(const fs::path &file, int path)
     }
 
     if(index > 0) {
-        std::cout << " Inserted correctly, index #" << index << "." << std::endl;
+        //std::cout << " Inserted correctly, index #" << index << "." << std::endl;
         return true;
     }
     else {
-        std::cout << file.leaf() << " - insertion failed." << std::endl;
+        //std::cout << file.leaf() << " - insertion failed." << std::endl;
         return false;
     }
 }

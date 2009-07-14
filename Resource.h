@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <string>
+#include <vector>
 
 enum res_type {
     AUDIO,
@@ -12,7 +13,8 @@ enum res_type {
 
 class Resource {
     public:
-        bool init(int index);
+        Resource() : loaded(false) {}
+        Resource* init(int index);
         bool init(boost::filesystem::path path);
         int static staticReader(void *res, uint64_t pos, char *buffer, int max);
 
@@ -20,11 +22,15 @@ class Resource {
         virtual bool load() = 0;
         virtual int read(int pos, int max, char *buffer) = 0;
         virtual std::string getMimetype() = 0;
-    protected:
+
         int fileIndex;
+        static std::vector<Resource*> resources;
+    protected:
         bool indexed;
+        bool loaded;
         std::string extension;
         boost::filesystem::path path;
+    private:
 
 };
 

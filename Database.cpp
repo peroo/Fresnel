@@ -48,12 +48,15 @@ int Database::insertAudio(const fs::path &file, int path)
     audio.init(file);
     Metadata *meta = audio.getMetadata();
 
-    query("INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?)");
+    query("INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     bindInt(id);
     bindString(meta->title);
     bindString(meta->artist);
     bindString(meta->album);
+    bindString(meta->albumartist);
     bindInt(atoi(meta->tracknumber.c_str()));
+    bindInt(meta->length);
+    bindInt(meta->bitrate);
     bindString(meta->musicbrainz_trackid);
     step();
 
@@ -109,7 +112,6 @@ int Database::insertFile(const fs::path &file, int path, int type)
 bool Database::createTables()
 {
     // TODO: Remove "IF NOT EXISTS" in favour of proper db checking
-    // TODO: Remove drop-tables when indexing synchronises properly instead of duplicating
     std::string resource = "CREATE TABLE IF NOT EXISTS resource ( \
         id INTEGER PRIMARY KEY AUTOINCREMENT, \
         path_id INTEGER, \
@@ -137,7 +139,10 @@ bool Database::createTables()
         title TEXT, \
         artist TEXT, \
         album TEXT, \
+        album_artist TEXT, \
         tracknumber INTEGER, \
+        length INTEGER, \
+        bitrate INTEGER, \
         mbid_tid TEXT)";
     std::string image = "CREATE TABLE IF NOT EXISTS image ( \
         id INTEGER PRIMARY KEY, \

@@ -20,6 +20,7 @@ class SQLite {
         int             getInt();
         double          getFloat();
         std::string     getString();
+        void            getVoid();
         int             ColCount();
         int             ColType(int index);
         std::string     ColName(int index);

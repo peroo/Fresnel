@@ -23,7 +23,12 @@ void* encode(void *encoder)
 
 bool Audio::load(int output)
 {
-    std::cout << "EXTENSION: " << extension << std::endl;
+    if(loaded)
+        return true;
+    else
+        loaded = true;
+
+    //std::cout << "EXTENSION: " << extension << std::endl;
     if(extension == ".flac") {
         decoder = new FLACDecoder(path);
     }

@@ -70,8 +70,11 @@ bool JavaScript::run(HttpRequest *req)
 
   Handle<Object> obj = sling->NewInstance();
   obj->Set(String::New("Request"), WrapRequest(req));
+  obj->Set(String::New("params"), embedParams(req));
 
   context->Global()->Set(String::New("Slingshot"), obj);
+
+  
 
   // Compile and run the script
   if (!ExecuteScript(source))
@@ -81,8 +84,18 @@ bool JavaScript::run(HttpRequest *req)
   Handle<Value> output_val = context->Global()->Get(output_name);
 
   if (!output_val->IsObject()) {
-	Log("No output.");
-	return false;
+	Log("No JSON output.");
+      Handle<Value> val = context->Global()->Get(String::New("Plain"));
+      if(!val->IsString()) {
+        Log("No String output.");
+        return false;
+      }
+      else {
+          Handle<String> str = Handle<String>::Cast(val);
+          String::Utf8Value bah(str);
+          result = *bah;
+          return true;
+      }
   }
 
   Handle<Object> output = Handle<Object>::Cast(output_val);
@@ -93,13 +106,36 @@ bool JavaScript::run(HttpRequest *req)
   return true;
 }
 
+Handle<Array> JavaScript::embedParams(HttpRequest *req)
+{
+    HandleScope scope;
+
+    Local<Array> arr = Array::New(req->parameters.size());
+
+    std::vector<std::string>::iterator iter;
+    int i = 0;
+    for(iter = req->parameters.begin(); iter != req->parameters.end(); iter++) {
+        arr->Set(Integer::New(i++), String::New(iter->c_str(), iter->length()));
+    }
+    return scope.Close(arr);
+}
+
 std::string JavaScript::ParseHandle(Handle<Value> value)
 {
     HandleScope handle_scope;
 
     if(value->IsString()) {
         String::Utf8Value val(value);
-        return std::string("\"") + *val + "\"";
+        std::string str = *val;
+        int i=0;
+        int pos = str.find('"');
+        while(pos != std::string::npos) {
+            i = pos;
+            str.insert(i, 1, '\\');
+            pos = str.find('"', i+2);
+        }
+
+        return std::string("\"") + str + "\"";
     }
     else if(value->IsNumber()) {
         std::ostringstream o;

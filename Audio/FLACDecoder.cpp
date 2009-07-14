@@ -18,7 +18,7 @@ bool FLACDecoder::start()
 {
     FLAC::Decoder::File::init(file.string());
     int ok = process_until_end_of_stream();
-    std::cout << "decoding ended: " << ok << std::endl;
+    //std::cout << "decoding ended: " << ok << std::endl;
     encoder->feedingDone();
     return ok ? true : false;
 }

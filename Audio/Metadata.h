@@ -25,8 +25,11 @@ class Metadata {
         std::string title;
         std::string tracknumber;
         std::string date;
+        int         length;
+        int         bitrate;
 
     private:
+        bool parseProperties(TagLib::File *file);
         bool parseXiphComment(TagLib::Ogg::XiphComment *tag);
         bool parseId3v1(TagLib::ID3v1::Tag *tag);
         bool parseId3v2(TagLib::ID3v2::Tag *tag);

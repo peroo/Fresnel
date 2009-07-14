@@ -3,16 +3,39 @@
 
 #include <boost/filesystem/convenience.hpp>
 #include <iostream>
+#include <vector>
 
 namespace fs = boost::filesystem;
+
+std::vector<Resource*> Resource::resources;
 
 bool Resource::load(int index) {}
 bool Resource::load() {}
 std::string Resource::getMimetype() {}
 int Resource::read(int pos, int max, char *buffer) {}
 
-bool Resource::init(int index)
+Resource* Resource::init(int index)
 {
+    // Caches last ten resources in case of new requests
+    std::vector<Resource*>::iterator iter;
+    for(iter = resources.begin(); iter < resources.end(); ++iter) {
+        if(index == (*iter)->fileIndex) {
+            Resource* r = *iter;
+            resources.erase(iter);
+            resources.insert(resources.begin(), r);
+
+            std::cout << "Hooking resource: " << index << std::endl;
+            delete this;
+            return r;
+        }
+    }
+
+    if(resources.size() > 10) {
+        resources.pop_back();
+    }
+    resources.insert(resources.begin(), this);
+
+
     fileIndex = index;
     indexed = true;
 
@@ -22,7 +45,7 @@ bool Resource::init(int index)
 
     std::cout << "Opening resource: " << path << std::endl;
 
-    return true;
+    return this;
 }
 
 bool Resource::init(boost::filesystem::path _path)

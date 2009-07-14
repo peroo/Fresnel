@@ -26,6 +26,8 @@ class JavaScript {
   static v8::Handle<v8::Object> WrapRequest(HttpRequest* obj);
   static HttpRequest* UnwrapRequest(v8::Handle<v8::Object> obj);
 
+  static v8::Handle<v8::Array> embedParams(HttpRequest *req);
+
   // Callbacks that access the individual fields of request objects.
   static v8::Handle<v8::Value> GetPath(v8::Local<v8::String> name, const v8::AccessorInfo& info);
   static v8::Handle<v8::Value> GetHost(v8::Local<v8::String> name, const v8::AccessorInfo& info);

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <iostream>
 
 using namespace v8;
 
@@ -25,7 +26,7 @@ Handle<Value> JSDatabase::GetRow(uint32_t index, const AccessorInfo& info)
     HandleScope scope;
     JSDatabase *jsdb = UnwrapDb(info);
     Handle<Value> val = jsdb->ReadRow((int)index);
-    return scope.Close(val);
+    return val;
 }
 
 JSDatabase* JSDatabase::UnwrapDb(const AccessorInfo& info)
@@ -34,94 +35,44 @@ JSDatabase* JSDatabase::UnwrapDb(const AccessorInfo& info)
     void *ptr = field->Value();
     return static_cast<JSDatabase*>(ptr);
 }
-std::map<std::string, int>* JSDatabase::UnwrapCols(const AccessorInfo& info)
-{
-    Handle<External> field = Handle<External>::Cast(info.Holder()->GetInternalField(0));
-    void *ptr = field->Value();
-    return static_cast<std::map<std::string, int>*>(ptr);
-}
-std::vector< Handle<Value> >* JSDatabase::UnwrapRow(const AccessorInfo& info)
-{
-    Handle<External> field = Handle<External>::Cast(info.Holder()->GetInternalField(0));
-    void *ptr = field->Value();
-    return static_cast<std::vector< Handle<Value> >*>(ptr);
-}
-
-Handle<Value> JSDatabase::MapGet(Local<String> property, const AccessorInfo& info)
-{
-    std::vector< Handle<Value> > *row = UnwrapRow(info);
-    std::map<std::string, int> *columns = UnwrapCols(info);
-
-    String::Utf8Value name(property);
-    std::map<std::string, int>::iterator iter = columns->find(*name);
-    if(iter == columns->end())
-        return v8::Undefined();
-    else
-        return (*row)[iter->second];
-}
-
-Handle<Array> JSDatabase::MapEnumerate(const AccessorInfo& info)
-{
-    HandleScope scope;
-
-    std::map<std::string, int> *columns = UnwrapCols(info);
-
-    Handle<Array> arr = Array::New(columns->size());
-    std::map<std::string, int>::iterator iter;
-    for(iter = columns->begin(); iter != columns->end(); ++iter) {
-        arr->Set(Number::New(iter->second), String::New(iter->first.c_str()));
-    }
-
-    return scope.Close(arr);
-}
-
-Handle<Boolean> JSDatabase::MapQuery(Local<String> property, const AccessorInfo& info)
-{
-    std::map<std::string, int> *columns = UnwrapCols(info);
-
-    String::Utf8Value val(property);
-    if(columns->find(*val) != columns->end())
-        return v8::True();
-    else
-        return v8::False();
-
-}
 
 Handle<Value> JSDatabase::ReadRow(int index)
 {
     HandleScope handle_scope;
 
     while(!done && index >= rows.size()) {
-        int state = step();
-        if(state == SQLITE_DONE) {
-            // TODO: Investigate zero-row queries
-            done = true;
-        }
+        // TODO: Investigate zero-row queries
+        done = !step();
+        
         if(columns.size() < 1 && !done)
             SaveColNames();
 
-        std::vector<Handle<Value> > row;
+        Handle<Object> asd = Object::New();
+        Persistent<Object> row = Persistent<Object>::New(asd);
         int cols = ColCount();
         for(int i=0; i < cols; ++i) {
-            Persistent<Value> col;
+            std::string n = ColName(i);
+            Handle<String> nam = String::New(n.c_str());
+            Persistent<String> name = Persistent<String>::New(nam);
+            Handle<Value> val;
+
             switch(ColType(i)) {
                 case SQLITE_TEXT:
-                    col = Persistent<String>::New(String::New(getString().c_str()));
-                    row.push_back(col);
+                    val = String::New(getString().c_str());
                     break;
                 case SQLITE_INTEGER:
-                    col = Persistent<Number>::New(Number::New(getInt()));
-                    row.push_back(col);
+                    val = Number::New(getInt());
                     break;
                 case SQLITE_FLOAT:
-                    col = Persistent<Number>::New(Number::New(getFloat()));
-                    row.push_back(col);
+                    val = Number::New(getFloat());
                     break;
                 case SQLITE_NULL:
-                    col = Persistent<Primitive>::New(Null());
-                    row.push_back(col);
+                    getVoid();
+                    val = Null();
                     break;
             }
+            Persistent<Value> value = Persistent<Value>::New(val);
+            row->Set(name, value);
         }
 
         rows.push_back(row);
@@ -131,19 +82,7 @@ Handle<Value> JSDatabase::ReadRow(int index)
         return v8::Undefined();
     }
 
-    Handle<ObjectTemplate> row = ObjectTemplate::New();
-    row->SetNamedPropertyHandler(MapGet);
-    //row->SetNamedPropertyHandler(MapGet, 0, MapQuery, 0, MapEnumerate);
-    row->SetInternalFieldCount(2);
-
-    Handle<Object> r = row->NewInstance();
-
-    Handle<External> col_ptr = External::New(&columns);
-    Handle<External> row_ptr = External::New(&rows[index]);
-    r->SetInternalField(0, col_ptr);
-    r->SetInternalField(1, row_ptr);
-
-    handle_scope.Close(r);
+    return rows[index];
 }
 
 void JSDatabase::SaveColNames()

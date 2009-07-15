@@ -29,6 +29,36 @@ Handle<Value> JSDatabase::GetRow(uint32_t index, const AccessorInfo& info)
     return val;
 }
 
+Handle<Boolean> JSDatabase::QueryRow(uint32_t index, const AccessorInfo& info)
+{
+    //TODO: Broken, either ignored or returning true on wrong indices
+    HandleScope scope;
+    JSDatabase *jsdb = UnwrapDb(info);
+    return jsdb->CheckRowIndex((int)index);
+}
+
+Handle<Boolean> JSDatabase::CheckRowIndex(int index)
+{
+    HandleScope handle_scope;
+
+    if(done) {
+        if(index >= rows.size())
+            return v8::False();
+        else
+            return v8::True();
+    }
+    else {
+        if(index < rows.size())
+            return v8::True();
+
+        Handle<Value> val = ReadRow(index);
+        if(val != v8::Undefined())
+            return v8::True();
+        else
+            return v8::False();
+    }
+}
+
 JSDatabase* JSDatabase::UnwrapDb(const AccessorInfo& info)
 {
     Handle<External> field = Handle<External>::Cast(info.Holder()->GetInternalField(0));
@@ -138,7 +168,7 @@ Handle<Object> JSDatabase::MakeObject()
     temp->SetAccessor(String::New("rowsAffected"), GetRowsAffected);
 
     Handle<ObjectTemplate> rows = ObjectTemplate::New();
-    rows->SetIndexedPropertyHandler(GetRow);
+    rows->SetIndexedPropertyHandler(GetRow, 0, QueryRow);
     rows->SetInternalFieldCount(1);
 
     Handle<Object> rowObj = rows->NewInstance();

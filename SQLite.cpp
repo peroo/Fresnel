@@ -8,6 +8,11 @@
 
 sqlite3 *SQLite::db;
 
+SQLite::~SQLite() {
+    if(used)
+        sqlite3_finalize(statement);
+}
+
 bool SQLite::selectDB(std::string filename)
 {
     return sqlite3_open(filename.c_str(), &db) == SQLITE_OK;
@@ -15,6 +20,11 @@ bool SQLite::selectDB(std::string filename)
 
 void SQLite::query(std::string query)
 {
+    if(used)
+        sqlite3_finalize(statement);
+
+    used = true;
+
     paramIndex = 0;
     /*if(statement != NULL)
         sqlite3_finalize(statement);*/
@@ -59,18 +69,18 @@ void SQLite::getVoid()
     ++colIndex;
 }
 
-int SQLite::step()
+bool SQLite::step()
 {
     colIndex = 0;
     int result = sqlite3_step(statement);
     if(result == SQLITE_ROW)
-        return 1;
+        return true;
     else if(result == SQLITE_DONE)
-        return 0;
+        return false;
     else {
-        //std::cout << "DB step failed: Error #" << result << std::endl;
-        //std::cout << sqlite3_errmsg(db) << std::endl;
-        return -1;
+        std::cout << "DB step failed: Error #" << result << std::endl;
+        std::cout << sqlite3_errmsg(db) << std::endl;
+        return false;
     }
 }
 

@@ -8,11 +8,13 @@ struct sqlite3_stmt;
 
 class SQLite {
     public:
+        SQLite() : used(false) {}
+        ~SQLite();
         static bool selectDB(std::string filename);
     protected:
         void            insert(std::string query);
         void            query(std::string query);
-        int             step();
+        bool            step();
         int             last_insert_id();
         int             rows_affected();
         void            bindInt(int value);
@@ -29,6 +31,7 @@ class SQLite {
         sqlite3_stmt *statement;
         int paramIndex;
         int colIndex;
+        bool used;
 };
 
 #endif

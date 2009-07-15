@@ -46,7 +46,7 @@ int Database::getArtistId(std::string name, std::string sortname)
             WHERE name=?");
     bindString(name);
 
-    if(step() > -1) {
+    if(step()) {
         id = getInt();
     }
     else {
@@ -71,14 +71,14 @@ int Database::getAlbumId(std::string title, std::string date, int artist)
             WHERE title=?");
     bindString(title);
 
-    if(step() > -1) {
+    if(step()) {
         id = getInt();
     }
     else {
-        query("INSERT INTO audio_album (title, date, artist) VALUES (?, ?, ?)");
+        query("INSERT INTO audio_album (title, artist, date) VALUES (?, ?, ?)");
         bindString(title);
-        bindString(date);
         bindInt(artist);
+        bindString(date);
         step();
         id = last_insert_id();
     }
@@ -99,11 +99,14 @@ int Database::insertAudio(const fs::path &file, int path)
     audio.init(file);
     Metadata *meta = audio.getMetadata();
 
+    int artistId = getArtistId(meta->artist, meta->artist_sort);
+    int albumId = getAlbumId(meta->album, meta->date, getArtistId(meta->albumartist, meta->albumartist_sort));
+
     query("INSERT INTO audio_track VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     bindInt(id);
     bindString(meta->title);
-    bindInt(getArtistId(meta->artist, meta->artist_sort));
-    bindInt(getAlbumId(meta->album, meta->date, getArtistId(meta->albumartist, meta->albumartist_sort)));
+    bindInt(artistId);
+    bindInt(albumId);
     bindInt(atoi(meta->tracknumber.c_str()));
     bindInt(meta->length);
     bindInt(meta->bitrate);

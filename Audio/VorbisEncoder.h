@@ -9,13 +9,11 @@
 
 class VorbisEncoder: public AudioEncoder {
     public:
-        VorbisEncoder() : AudioEncoder("audio/ogg") {}
+        VorbisEncoder(Audio *parent) : AudioEncoder("audio/ogg", parent) {}
+        ~VorbisEncoder();
         bool start();
-        const std::string mimetype;
         
     private:
-        void close();
-
         ogg_stream_state os;
         ogg_page og;
         ogg_packet op;

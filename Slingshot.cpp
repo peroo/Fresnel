@@ -22,14 +22,14 @@ namespace fs = boost::filesystem;
 
 int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
 {
-    HttpRequest *req = new HttpRequest(connection, url, method);
-    req->init();
+    HttpRequest req = HttpRequest(connection, url, method);
+    req.init();
 
-    Database *db = new Database();
+    Database db = Database();
 
-    if(req->module == RESOURCE) {
+    if(req.module == RESOURCE) {
         Resource *res;
-        int type = db->getResourceType(atoi(req->object.c_str()));
+        int type = db.getResourceType(atoi(req.object.c_str()));
         if(type == AUDIO) {
             res = new Audio();
         }
@@ -37,24 +37,24 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
             res = new Image();
         }
 
-        res = res->init(atoi(req->object.c_str()));
+        res = res->init(atoi(req.object.c_str()));
         res->load();
-        req->render(res);
+        req.render(res);
     }
-    else if(req->module == DATA) {
+    else if(req.module == DATA) {
         JavaScript script = JavaScript();
-        script.run(req);
-        req->render(&script);
+        script.run(&req);
+        req.render(&script);
     }
-    else if(req->module == STATIC_FILE) {
-        fs::path path = fs::path("public_html/") / req->object;
+    else if(req.module == STATIC_FILE) {
+        fs::path path = fs::path("public_html/") / req.object;
         if(fs::exists(path)) {
             std::cout << path.string() << " - 200" << std::endl;
-            req->render(path);
+            req.render(path);
         }
         else {
             std::cout << path.string() << " - 404" << std::endl;
-            req->fail(404);
+            req.fail(404);
         }
     }
 

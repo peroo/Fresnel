@@ -16,7 +16,6 @@ namespace fs = boost::filesystem;
 
 Database::~Database() 
 {
-    //sqlite3_finalize(statement);
 }
 int Database::getResourceType(int id)
 {

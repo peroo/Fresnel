@@ -9,6 +9,10 @@
 #include <iostream>
 #include <setjmp.h>
 
+Image::~Image() {
+    delete[] bitmap;
+}
+
 bool Image::load(int format)
 {
     if(loaded)
@@ -336,13 +340,16 @@ void Image::encodeJPEG()
         row_pointer[0] = &temp[cinfo.next_scanline * width * 3];
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
     };
-    delete temp;
+    delete[] temp;
+    delete[] bitmap;
+    bitmap = NULL;
 
     jpeg_finish_compress(&cinfo);
 
     output.insert(output.begin(), dst.buf, dst.buf + dst.used);
 
     jpeg_destroy_compress(&cinfo);
+    free(dst.buf);
 }
 
 inline double Image::weighted_sum(const double dx,

@@ -17,6 +17,11 @@ bool HttpRequest::init()
 
     parseURL();
 
+    /*std::cout << "Request for " << module << "/" << object << " with headers:" << std::endl;
+    for(std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+        std::cout << it->first << ": " << it->second << std::endl;
+    }*/
+
     return true;
 }
 
@@ -72,6 +77,7 @@ void HttpRequest::render(Resource *res)
 {
     response = MHD_create_response_from_callback(-1, 32*1024, Resource::staticReader, res, NULL);
     MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
+    MHD_add_response_header(response, "Accept-Ranges", "None");
     int ret = MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }

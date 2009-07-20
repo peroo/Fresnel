@@ -17,7 +17,8 @@ struct pixel {
 
 class Image : public Resource {
     public:
-        Image() {}
+        Image() : bitmap(NULL) {}
+        ~Image();
 
         bool load();
         bool load(int index);

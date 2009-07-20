@@ -10,6 +10,7 @@ class AudioEncoder;
 
 class AudioDecoder {
     public:
+        virtual ~AudioDecoder() {};
         AudioDecoder(boost::filesystem::path _file) : file(_file) {}
         void init(AudioEncoder *_encoder);
         virtual bool start() = 0;

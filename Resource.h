@@ -14,6 +14,7 @@ enum res_type {
 class Resource {
     public:
         Resource() : loaded(false) {}
+        virtual ~Resource() {}
         Resource* init(int index);
         bool init(boost::filesystem::path path);
         int static staticReader(void *res, uint64_t pos, char *buffer, int max);

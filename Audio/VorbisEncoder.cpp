@@ -1,12 +1,20 @@
 #include "VorbisEncoder.h"
+#include "Audio.h"
 
 #include <iostream>
 #include <pthread.h>
-#include <ctime>
 #include <cstdlib>
 #include <unistd.h>
 #include <google/profiler.h>
 
+VorbisEncoder::~VorbisEncoder()
+{
+    ogg_stream_clear(&os);
+    vorbis_block_clear(&vb);
+    vorbis_dsp_clear(&vd);
+    vorbis_comment_clear(&vc);
+    vorbis_info_clear(&vi);
+}
 
 bool VorbisEncoder::start()
 {
@@ -43,8 +51,8 @@ bool VorbisEncoder::start()
             int result = ogg_stream_flush(&os, &og);
             if(result == 0) break;
 
-            saveData(og.header, og.header_len);
-            saveData(og.body, og.body_len);
+            parent->saveData(og.header, og.header_len);
+            parent->saveData(og.body, og.body_len);
         }
     }
 
@@ -59,7 +67,6 @@ bool VorbisEncoder::start()
         usleep(10000);
     }
 
-    time_t start = time(NULL);
     //ProfilerStart("/home/peroo/server/out.prof");
 
     while(feeding || (buffer.front().size() - pos) > 0) {
@@ -89,8 +96,8 @@ bool VorbisEncoder::start()
                 while(!eos) {
                     int result = ogg_stream_pageout(&os, &og);
                     if(result==0) break;
-                    saveData(og.header, og.header_len);
-                    saveData(og.body, og.body_len);
+                    parent->saveData(og.header, og.header_len);
+                    parent->saveData(og.body, og.body_len);
     
                     if(ogg_page_eos(&og)) eos = 1;
                 }
@@ -98,22 +105,10 @@ bool VorbisEncoder::start()
         }
     }
     //ProfilerStop();
-    time_t end = time(NULL);
-
-    std::cout << "Encoding finished in " << end - start << "s." << std::endl;
 
     buffer.clear();
-
     active = false;
-    close();
+    parent->encodingFinished();
 
     return true;
-}
-
-void VorbisEncoder::close() {
-    ogg_stream_clear(&os);
-    vorbis_block_clear(&vb);
-    vorbis_dsp_clear(&vd);
-    vorbis_comment_clear(&vc);
-    vorbis_info_clear(&vi);
 }

@@ -10,7 +10,8 @@ class AudioEncoder;
 
 class FLACDecoder: public AudioDecoder, FLAC::Decoder::File {
     public:
-        FLACDecoder(boost::filesystem::path path) : AudioDecoder(path) {}
+        explicit FLACDecoder(boost::filesystem::path path) : AudioDecoder(path) {}
+        ~FLACDecoder() {}
         bool start();
     private:
         FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame *frame, const FLAC__int32 * const buffer[]);

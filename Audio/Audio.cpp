@@ -86,7 +86,9 @@ Metadata* Audio::getMetadata()
 {
     Metadata *meta = new Metadata();
     if(indexed) {
-        meta->fetchData(fileIndex);
+        //TODO: Get from db instead of file
+        //meta->fetchData(fileIndex);
+        meta->loadData(path);
     }
     else {
         meta->loadData(path);

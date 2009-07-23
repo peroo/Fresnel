@@ -1,11 +1,14 @@
 #include "VorbisEncoder.h"
 #include "Audio.h"
+#include "Metadata.h"
 
 #include <iostream>
 #include <pthread.h>
 #include <cstdlib>
 #include <unistd.h>
 #include <google/profiler.h>
+
+#include <map>
 
 VorbisEncoder::~VorbisEncoder()
 {
@@ -33,6 +36,13 @@ bool VorbisEncoder::start()
 
     vorbis_comment_init(&vc);
     vorbis_comment_add_tag(&vc, "ENCODER", "Slingshot v0.01");
+    Metadata *meta = parent->getMetadata();
+    std::map<const char*, std::string> metaArray = meta->getFields();
+
+    for(std::map<const char*, std::string>::iterator it = metaArray.begin(); it != metaArray.end(); ++it) {
+        vorbis_comment_add_tag(&vc, it->first, it->second.c_str());
+    }
+
 
     srand(time(NULL));
     ogg_stream_init(&os, rand());

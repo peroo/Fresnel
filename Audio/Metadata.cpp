@@ -37,6 +37,50 @@ bool Metadata::fetchData(int index)
     return false;
 }
 
+std::map<const char*, std::string> Metadata::getFields()
+{
+    std::map<const char*, std::string> meta;
+
+    if(!album.empty()) {
+        meta["ALBUM"] = album;
+    }
+    if(!albumartist.empty()) {
+        meta["ALBUMARTIST"] = albumartist;
+    }
+    if(!albumartist_sort.empty()) {
+        meta["ALBUMARTISTSORT"] = albumartist_sort;
+    }
+    if(!artist.empty()) {
+        meta["ARTIST"] = artist;
+    }
+    if(!artist_sort.empty()) {
+        meta["ARTISTSORT"] = artist_sort;
+    }
+    if(!musicbrainz_albumartistid.empty()) {
+        meta["MUSICBRAINZ_ALBUMARTISTID"] = musicbrainz_albumartistid;
+    }
+    if(!musicbrainz_albumid.empty()) {
+        meta["MUSICBRAINZ_ALBUMID"] = musicbrainz_albumid;
+    }
+    if(!musicbrainz_artistid.empty()) {
+        meta["MUSICBRAINZ_ARTISTID"] = musicbrainz_artistid;
+    }
+    if(!musicbrainz_trackid.empty()) {
+        meta["MUSICBRAINZ_TRACKID"] = musicbrainz_trackid;
+    }
+    if(!title.empty()) {
+        meta["TITLE"] = title;
+    }
+    if(!tracknumber.empty()) {
+        meta["TRACKNUMBER"] = tracknumber;
+    }
+    if(!date.empty()) {
+        meta["DATE"] = date;
+    }
+
+    return meta;
+}
+
 bool Metadata::parseXiphComment(TagLib::Ogg::XiphComment *tag)
 {
     if(tag == NULL) return false;

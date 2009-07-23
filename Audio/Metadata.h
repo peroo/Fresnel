@@ -9,11 +9,13 @@
 #include <boost/filesystem/path.hpp>
 
 #include <string>
+#include <map>
 
 class Metadata {
     public:
         bool loadData(boost::filesystem::path path);
         bool fetchData(int index);
+        std::map<const char*, std::string> getFields();
 
         std::string album;
         std::string artist;

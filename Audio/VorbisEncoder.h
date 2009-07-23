@@ -9,7 +9,7 @@
 
 class VorbisEncoder: public AudioEncoder {
     public:
-        VorbisEncoder(Audio *parent) : AudioEncoder("audio/ogg", parent) {}
+        VorbisEncoder(Audio *parent) : AudioEncoder("application/ogg", parent) {}
         ~VorbisEncoder();
         bool start();
         

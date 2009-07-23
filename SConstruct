@@ -8,7 +8,8 @@ if ARGUMENTS.get('debug', 0):
 elif ARGUMENTS.get('optimize', 0):
 #    env['CCFLAGS'] = '-fast'
 #    env['CCFLAGS'] = '-O9'
-    env['CCFLAGS'] = '-O2 -ftree-vectorize -ftree-vectorizer-verbose=3 -ffast-math -mtune=k8-sse3'
+#    env['CCFLAGS'] = '-O2 -ftree-vectorize -ftree-vectorizer-verbose=3 -ffast-math -mtune=k8-sse3'
+     env['CCFLAGS'] = '-O2 -ffast-math -mtune=k8-sse3'
 elif ARGUMENTS.get('valgrind', 0):
     env['CCFLAGS'] = '-O0 -g'
 else:

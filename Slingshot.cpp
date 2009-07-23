@@ -20,8 +20,18 @@
 
 namespace fs = boost::filesystem;
 
-int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, unsigned int *upload_data_size, void **con_cls)
+
+int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **ptr)
 {
+    static int dummy;
+
+    //TODO: Investigate parsing headers early and returning MHD_NO in some cases.
+    if(&dummy != *ptr) {
+        *ptr = &dummy;
+        return MHD_YES;
+    }
+    *ptr = NULL;
+
     HttpRequest req = HttpRequest(connection, url, method);
     req.init();
 
@@ -61,6 +71,19 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     return 1;
 }
 
+void connectionClosed(void *cls, struct MHD_Connection *connection, void **con_cls, MHD_RequestTerminationCode toe)
+{
+    /*std::cout << "Connection closed: ";
+    if(toe == MHD_REQUEST_TERMINATED_COMPLETED_OK)
+        std::cout << "Completed OK";
+    else if(toe == MHD_REQUEST_TERMINATED_WITH_ERROR)
+        std::cout << "Error";
+    else if(toe == MHD_REQUEST_TERMINATED_TIMEOUT_REACHED)
+        std::cout << "Timeout";
+
+    std::cout << std::endl;*/
+}
+
 bool Slingshot::init(bool test) {
 	// Setup working dir
     base = fs::path(getenv("HOME")) / ".slingshot";
@@ -89,7 +112,10 @@ bool Slingshot::init(bool test) {
         false, 
         false, 
         requestCurrier, 
-        false, 
+        false,
+        MHD_OPTION_NOTIFY_COMPLETED,
+        connectionClosed,
+        NULL,
         MHD_OPTION_END
     );
 	if(!server)

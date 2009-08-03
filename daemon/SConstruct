@@ -12,8 +12,6 @@ elif ARGUMENTS.get('optimize', 0):
      env['CCFLAGS'] = '-O2 -ffast-math -mtune=k8-sse3'
 elif ARGUMENTS.get('valgrind', 0):
     env['CCFLAGS'] = '-O0 -g'
-else:
-    env['CCFLAGS'] = '-Wno-write-strings'
 
 #env.Append( RPATH = '/opt/intel/Compiler/11.0/083/lib/ia32/');
 

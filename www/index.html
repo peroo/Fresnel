@@ -1,0 +1,40 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Index!</title>
+<link rel="stylesheet" href="style/main.css" type="text/css">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<script type="text/javascript" src="js/main.js"></script>
+</head>
+<body>
+
+<audio id="html_player">
+    <object type="application/x-java-applet"
+        code="com.fluendo.player.Cortado.class"
+        archive="cort-t-strip.jar"
+        width="0" height="0"
+        id="java_applet">
+        <param name="autoPlay" value="false" />
+        <param name="video" value="false" />
+        <param name="seekable" value="false" />
+        <param name="live" value="false" />
+    </object>
+</audio>
+
+<div id="tracks">
+    <h2 id="album"></h2>
+    <ul id="playlist"></ul>
+</div>
+
+<ul id="album_list"></ul>
+
+<div id="artwork">
+    <div id="art_container">
+        <img id="art_view" alt="Cover Artwork" />
+    </div>
+    <ul id="art_nav">
+    </ul>
+</div>
+
+</body>
+</html>

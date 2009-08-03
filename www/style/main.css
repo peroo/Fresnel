@@ -1,0 +1,129 @@
+h1, h2, h3, #album_list {
+    font-family: "Garamond Premr Pro", "Georgia", serif;
+    font-weight: bold;
+}
+
+#tracks {
+    position: absolute;
+    left: 550px;
+    min-width: 600px;
+    display: inline-block;
+}
+
+#playlist { 
+    width: 100%;
+    font-family: "Helvetica LT Std", Arial, sans-serif;
+}
+#playlist li {
+    position: relative;
+    background-color: white;
+    width: 100%;
+    list-style-type: none;
+    padding-left: 10px;
+    line-height: 2em;
+}
+#playlist li:nth-child(2n) {
+    background-color: #f4f4f4;
+}
+#playlist li:hover {
+    background-color: black;
+    color: white;
+    cursor: pointer;
+}
+#playlist span.time {
+    float: right;
+    padding: 0 1em;
+}
+
+#playlist li.active:before {
+    display: block;
+    position: absolute;
+    content: "\25B7";
+    left: -15px;
+    line-height: 2em;
+}
+#playlist.paused li.active:before {
+    content: "\25AF \25AF";
+    left: -20px;
+}
+#playlist li.active .progress_bar { display: block; }
+#playlist .current_time { display: none; }
+#playlist li.active .current_time{ display: inline; }
+#playlist li.active .current_time:after { content: " / "; }
+
+#playlist li div.progress_bar {
+    display: none;
+    position: absolute;
+    background-color: black;
+    color: white;
+    height: 100%;
+    width: 0%;
+    margin-left: -10px;
+    padding-left: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+#playlist .progress_bar .text {
+    display: block;
+    width: 100%;
+}
+#album_list {
+    height: 300px;
+    width: 500px;
+    overflow-y: scroll;
+    border: 1px solid black;
+    padding: 5px;
+}
+#album_list li {
+    padding: 1px 4px;
+}
+#album_list li:hover {
+    background: black;
+    color: white;
+    cursor: pointer;
+}
+#album_list li.expanded {
+    background: black;
+    color: white;
+    cursor: default;
+}
+#album_list li li { 
+    display: none;
+    font-style: italic;
+    font-weight:normal;
+    padding: 1px 0;
+    cursor: pointer;
+}
+#album_list li li:hover {
+    text-decoration: underline;
+}
+#album_list li.expanded li { display: block; }
+
+#artwork {
+    width: 500px;
+    height: 500px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+#art_view {
+    width: 100%;
+}
+#art_nav li {
+    font-family: sans-serif;
+    float: left;
+    list-style-type: none;
+    padding: 0.5em 2em;
+    cursor: pointer;
+    border: 1px solid black;
+}
+#art_nav li:hover {
+    text-decoration: underline;
+}
+#art_nav li.active {
+    background-color: black;
+    color: white;
+}
+#art_nav {
+    overflow: auto;
+}

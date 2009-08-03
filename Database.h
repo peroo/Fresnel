@@ -14,6 +14,7 @@ class Database : SQLite {
 
         bool createTables();
         int insertDir(const boost::filesystem::path &path, int parent, int type);
+        bool removeDir(const boost::filesystem::path &path);
         int insertAudio(const boost::filesystem::path &file, int path);
         int insertImage(const boost::filesystem::path &file, int path);
         int getResourceType(int id);

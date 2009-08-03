@@ -7,6 +7,7 @@
 #include <boost/filesystem/convenience.hpp>
 
 #include <iostream>
+#include <sstream>
 #include <pthread.h>
 
 namespace fs = boost::filesystem;
@@ -75,10 +76,18 @@ int HttpRequest::headerIterator(void *map, enum MHD_ValueKind kind, const char *
     return MHD_YES;
 }
 
+const char* itos(int number)
+{
+    std::stringstream out;
+    out << number;
+    return out.str().c_str();
+}
+
 void HttpRequest::render(Resource *res)
 {
     response = MHD_create_response_from_callback(-1, 32*1024, Resource::staticReader, res, NULL);
     MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
+    //MHD_add_response_header(response, "Content-Length", itos(res->getSize()));
     MHD_add_response_header(response, "Accept-Ranges", "None");
     int ret = MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
@@ -87,8 +96,7 @@ void HttpRequest::render(JavaScript *script)
 {
     std::string result = script->getResult();
     response = MHD_create_response_from_data(result.length(), (void*)result.c_str(), MHD_NO, MHD_YES);
-    //MHD_add_response_header(response, "content-type", "application/json; charset=utf-8");
-    MHD_add_response_header(response, "content-type", "text/plain; charset=utf-8");
+    MHD_add_response_header(response, "content-type", (script->getMimetype() + "; charset=utf-8").c_str());
     int ret = MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
@@ -133,10 +141,8 @@ void HttpRequest::render(fs::path path)
     fp = fopen(path.string().c_str(), "rb");
 
     int size = getSize(fp);
-    const char sss = (char)size;
-
     response = MHD_create_response_from_callback(size, 32*1024, file_reader, fp, file_close);
-    MHD_add_response_header(response, "content-length", &sss);
+    MHD_add_response_header(response, "content-length", itos(size));
     MHD_add_response_header(response, "content-type", (mimetype + "; charset=utf-8").c_str());
     int ret = MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);

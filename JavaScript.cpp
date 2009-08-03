@@ -52,6 +52,14 @@ std::string JavaScript::getResult()
     return result;
 }
 
+std::string JavaScript::getMimetype()
+{
+    if(!mimetype.empty())
+        return mimetype;
+    else
+        return "text/plain";
+}
+
 bool JavaScript::run(HttpRequest *req)
 {
   // Create a handle scope to hold the temporary references.
@@ -80,29 +88,34 @@ bool JavaScript::run(HttpRequest *req)
   if (!ExecuteScript(source))
     return false;
 
-  Handle<String> output_name = String::New("Output");
-  Handle<Value> output_val = context->Global()->Get(output_name);
+  Handle<Value> output_val = context->Global()->Get(String::New("Output"));
 
-  if (!output_val->IsObject()) {
-	Log("No JSON output.");
+  if(output_val->IsObject()) {
+    Handle<Object> output = Handle<Object>::Cast(output_val);
+    result = ParseHandle(output);
+    Log("JSON output.");
+  }
+  else {
       Handle<Value> val = context->Global()->Get(String::New("Plain"));
-      if(!val->IsString()) {
-        Log("No String output.");
-        return false;
-      }
-      else {
+      if(val->IsString()) {
           Handle<String> str = Handle<String>::Cast(val);
           String::Utf8Value bah(str);
           result = *bah;
-          return true;
+          Log("String output.");
+      }
+      else {
+          Log("No output.");
+          return false;
       }
   }
 
-  Handle<Object> output = Handle<Object>::Cast(output_val);
+  Handle<Value> mime = context->Global()->Get(String::New("Mimetype"));
+  if(mime->IsString()) {
+      Handle<String> mimestr = Handle<String>::Cast(mime);
+      String::Utf8Value mimeval(mimestr);
+      mimetype = *mimeval;
+  }
 
-  result = ParseHandle(output);
-
-  // All done; all went well
   return true;
 }
 
@@ -308,5 +321,5 @@ Handle<ObjectTemplate> JavaScript::MakeRequestTemplate() {
 
 
 void JavaScript::Log(const char* message) {
-  std::cout << "Logged: " << message << std::endl;
+  std::cout << "Javascript: " << message << std::endl;
 }

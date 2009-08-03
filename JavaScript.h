@@ -11,10 +11,12 @@ class JavaScript {
     public:
         bool run(HttpRequest *req);
         std::string getResult();
+        std::string getMimetype();
         static void Log(const char* message);
     private:
 
         std::string result;
+        std::string mimetype;
 
         static v8::Persistent<v8::ObjectTemplate> request_template;
 

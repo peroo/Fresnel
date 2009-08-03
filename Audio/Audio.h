@@ -15,17 +15,19 @@ class Metadata;
 
 class Audio : public Resource {
     public:
-        Audio() : encoder(NULL), decoder(NULL) {}
+        Audio() : encoder(NULL), decoder(NULL), metadata(NULL) {}
         ~Audio();
         bool load(int output);
         bool load();
         std::string getMimetype();
+        int getSize();
         int read(int pos, int max, char *buffer);
         void saveData(unsigned char *buffer, int count);
         void encodingFinished();
         Metadata* getMetadata();
 
     private:
+        Metadata *metadata;
         std::string mimetype;
         AudioDecoder *decoder;
         AudioEncoder *encoder;

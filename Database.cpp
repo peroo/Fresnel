@@ -42,7 +42,7 @@ int Database::getArtistId(std::string name, std::string sortname)
         return id;
 
     query("SELECT id FROM artist \
-            WHERE name=?");
+            WHERE name LIKE ?");
     bindString(name);
 
     if(step()) {
@@ -88,6 +88,7 @@ int Database::getAlbumId(std::string title, std::string date, int artist)
 
 int Database::insertAudio(const fs::path &file, int path)
 {
+    //TODO: Assumes album_artist tag exists
     int id = insertFile(file, path, AUDIO);
     if(id <= 0) {
         std::cout << "File not inserted properly, aborting audio insert" << std::endl;
@@ -111,8 +112,6 @@ int Database::insertAudio(const fs::path &file, int path)
     bindInt(meta->bitrate);
     bindString(meta->musicbrainz_trackid);
     step();
-
-    delete meta;
 
     return last_insert_id();
 }
@@ -147,6 +146,16 @@ int Database::insertDir(const fs::path &path, int parent, int type)
     return last_insert_id();
 }
 
+bool Database::removeDir(const fs::path &path)
+{
+    query("DELETE FROM path WHERE path LIKE ?");
+    bindString(path.string() + "%");
+    if(step() == SQLITE_DONE)
+        return true;
+    else
+        return false;
+}
+
 int Database::insertFile(const fs::path &file, int path, int type)
 {
     query("INSERT INTO resource (path_id, filename, type, size) VALUES (?, ?, ?, ?)");
@@ -164,18 +173,18 @@ int Database::insertFile(const fs::path &file, int path, int type)
 bool Database::createTables()
 {
     // TODO: Remove "IF NOT EXISTS" in favour of proper db checking
-    std::string resource = "CREATE TABLE IF NOT EXISTS resource ( \
-        id INTEGER PRIMARY KEY, \
-        path_id INTEGER, \
-        filename TEXT, \
-        size INTEGER, \
-        type INTEGER, \
-        hash TEXT)";
-
     std::string path = "CREATE TABLE IF NOT EXISTS path ( \
         path_id INTEGER PRIMARY KEY, \
         path TEXT NOT NULL, \
         parent INTEGER)";
+
+    std::string resource = "CREATE TABLE IF NOT EXISTS resource ( \
+        id INTEGER PRIMARY KEY, \
+        path_id INTEGER REFERENCES path(path_id), \
+        filename TEXT, \
+        size INTEGER, \
+        type INTEGER, \
+        hash TEXT)";
 
     std::string type = "CREATE TABLE IF NOT EXISTS type ( \
         id INTEGER PRIMARY KEY, \
@@ -187,7 +196,7 @@ bool Database::createTables()
         name TEXT)";
     
     std::string audioTrack = "CREATE TABLE IF NOT EXISTS audio_track ( \
-        id INTEGER PRIMARY KEY, \
+        id INTEGER PRIMARY KEY REFERENCES resource(id), \
         title TEXT, \
         artist INTEGER, \
         album INTEGER, \
@@ -205,8 +214,32 @@ bool Database::createTables()
         name TEXT, \
         sortname TEXT)";
     std::string image = "CREATE TABLE IF NOT EXISTS image ( \
-        id INTEGER PRIMARY KEY, \
+        id INTEGER PRIMARY KEY REFERENCES resource(id), \
         title TEXT)";
+
+    std::string pathTrigger = "CREATE TRIGGER Path_CascadeDelete \
+        AFTER DELETE ON path \
+        FOR EACH ROW \
+        BEGIN \
+            DELETE FROM resource \
+            WHERE path_id = OLD.path_id; \
+        END;";
+
+    std::string resAudioTrigger = "CREATE TRIGGER Audio_CascadeDelete \
+        AFTER DELETE ON resource \
+        FOR EACH ROW \
+        BEGIN \
+            DELETE FROM audio_track \
+            WHERE id = OLD.id; \
+        END;";
+
+    std::string resImageTrigger = "CREATE TRIGGER Image_CascadeDelete \
+        AFTER DELETE ON resource \
+        FOR EACH ROW \
+        BEGIN \
+            DELETE FROM image \
+            WHERE id = OLD.id; \
+        END;";
 
     insert(path);
     insert(resource);
@@ -216,6 +249,10 @@ bool Database::createTables()
     insert(audioAlbum);
     insert(artist);
     insert(image);
+
+    insert(pathTrigger);
+    insert(resAudioTrigger);
+    insert(resImageTrigger);
 
     return true;
 }

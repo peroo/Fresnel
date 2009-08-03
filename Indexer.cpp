@@ -5,6 +5,8 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
+
+#include <google/heap-profiler.h>
 #include <iostream>
 
 namespace fs = boost::filesystem;
@@ -14,9 +16,13 @@ Indexer::Indexer()
     db = new Database();
 }
 
-int Indexer::addFolder(const std::string &directory)
+int Indexer::addFolder(const std::string &directory, bool purge)
 {
     fs::path dir = fs::path(directory);
+
+    // TODO: Purge var is dumb
+    if(purge)
+        db->removeDir(dir);
 
     if(!fs::exists(dir)) {
         std::cout << "Path \"" << dir.file_string() << "\" doesn't exist." << std::endl;

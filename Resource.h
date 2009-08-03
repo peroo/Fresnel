@@ -23,6 +23,7 @@ class Resource {
         virtual bool load() = 0;
         virtual int read(int pos, int max, char *buffer) = 0;
         virtual std::string getMimetype() = 0;
+        virtual int getSize() = 0;
 
         int fileIndex;
         static std::vector<Resource*> resources;

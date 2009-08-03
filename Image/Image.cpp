@@ -38,6 +38,11 @@ std::string Image::getMimetype()
     return "image/jpeg";
 }
 
+int Image::getSize()
+{
+    return output.size();
+}
+
 int Image::read(int pos, int max, char *buffer)
 {
     int count = pos + max > output.size() ? output.size() - pos : max;

@@ -141,11 +141,11 @@ int main(int argc, char *argv[])
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
-    /*Indexer index = Indexer();
-    std::string path = "/home/peroo/raid/inc/Flac/";
-    index.addFolder(path);
-    path = "/home/peroo/raid/inc/incoming/";
-    index.addFolder(path);*/
+    Indexer index = Indexer();
+    index.addFolder("/home/peroo/raid/flac_inc/", true);
+    //index.addFolder("/home/peroo/raid/inc/unsorted_music/", false);
+    //index.addFolder("/home/peroo/raid/inc/Flac/", false);
+    //index.addFolder("/home/peroo/raid/inc/incoming/", false);
 
     while(1) {
         sleep(600);

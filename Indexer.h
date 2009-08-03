@@ -9,7 +9,7 @@
 class Indexer {
     public:
         Indexer();
-        int addFolder(const std::string &filename);
+        int addFolder(const std::string &filename, bool purge);
     private:
         Database *db;
         int scanFolder(const boost::filesystem::path &folder, int parent);

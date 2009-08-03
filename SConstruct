@@ -15,6 +15,8 @@ elif ARGUMENTS.get('valgrind', 0):
 else:
     env['CCFLAGS'] = '-Wno-write-strings'
 
+#env.Append( RPATH = '/opt/intel/Compiler/11.0/083/lib/ia32/');
+
 env.Program(['Slingshot.cpp', 
          'JavaScript.cpp', 
          'HttpRequest.cpp', 

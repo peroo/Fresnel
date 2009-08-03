@@ -12,6 +12,7 @@ std::vector<Resource*> Resource::resources;
 bool Resource::load(int index) {}
 bool Resource::load() {}
 std::string Resource::getMimetype() {}
+int Resource::getSize() {}
 int Resource::read(int pos, int max, char *buffer) {}
 
 Resource* Resource::init(int index)

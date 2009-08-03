@@ -24,6 +24,7 @@ class Image : public Resource {
         bool load(int index);
         int read(int pos, int max, char *buffer);
         std::string getMimetype();
+        int getSize();
 
     private:
         int width;

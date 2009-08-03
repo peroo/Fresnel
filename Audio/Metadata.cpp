@@ -117,8 +117,12 @@ bool Metadata::parseXiphComment(TagLib::Ogg::XiphComment *tag)
 bool Metadata::parseProperties(TagLib::File *file)
 {
     TagLib::AudioProperties *prop = file->audioProperties();
+    if(prop == NULL)
+        return false;
+
     bitrate = prop->bitrate();
     length = prop->length();
+    return true;
 }
 
 bool Metadata::parseId3v2(TagLib::ID3v2::Tag *tag)

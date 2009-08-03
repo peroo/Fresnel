@@ -35,6 +35,7 @@ Audio::~Audio()
 {
     delete decoder;
     delete encoder;
+    delete metadata;
 }
 
 bool Audio::load(int output)
@@ -82,19 +83,28 @@ std::string Audio::getMimetype()
     return mimetype;
 }
 
+int Audio::getSize()
+{
+    return -1; // TODO
+    Metadata *meta = getMetadata();
+    return 12500 * meta->length;
+}
+
 Metadata* Audio::getMetadata()
 {
-    Metadata *meta = new Metadata();
-    if(indexed) {
-        //TODO: Get from db instead of file
-        //meta->fetchData(fileIndex);
-        meta->loadData(path);
-    }
-    else {
-        meta->loadData(path);
+    if(metadata == NULL) {
+        metadata = new Metadata();
+        if(indexed) {
+            //TODO: Get from db instead of file
+            //meta->fetchData(fileIndex);
+            metadata->loadData(path);
+        }
+        else {
+            metadata->loadData(path);
+        }
     }
     
-    return meta;
+    return metadata;
 }
 
 void Audio::saveData(unsigned char *buffer, int count)

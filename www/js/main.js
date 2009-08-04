@@ -187,6 +187,7 @@ var player = (function()
                 paused = false;
                 audio.play();
                 timer = setInterval(pingTime, 100);
+                fire('paused', paused);
             }
 
             var pause = function() {

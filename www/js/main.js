@@ -176,41 +176,56 @@ var player = (function()
             var load = function() {
                 var id = playlist.getNext().id;
                 audio.src = 'http://129.241.122.50:9999/resource/' + id + '/asd.ogg';
+                util.log("src: " + audio.src);
                 audio.load();
-                //util.log("Changed src to: " + audio.src);
+                util.log("Changed src to: " + audio.src);
                 fire('trackChanged');
             }
 
             var play = function() {
-                clearInterval(timer);
                 load();
                 paused = false;
                 audio.play();
-                timer = setInterval(pingTime, 100);
                 fire('paused', paused);
+            }
+
+            var asd = function() {
+                var id = playlist.getNext().id;
+                audio.src = 'http://129.241.122.50:9999/resource/' + id + '/asd.ogg';
+                setTimeout(function(){
+                    audio.load(); 
+                }, 500);
+                setTimeout(function(){
+                    audio.play();
+                    fire('trackChanged');
+                    paused = false;
+                    fire('paused', paused);
+                }, 1000);
             }
 
             var pause = function() {
                 if(paused) {
                     paused = false;
                     audio.play();
-                    timer = setInterval(pingTime, 100);
                 }
                 else {
                     paused = true;
                     audio.pause();
-                    clearInterval(timer);
                 }
                 fire('paused', paused);
             }
 
             audio.addEventListener('ended', function() {
-                player.play();
+                util.log('ended');
+                //player.play();
+                asd();
             }, false);
 
             var pingTime = function() {
                 fire('time', audio.currentTime);
             }
+
+            audio.addEventListener('timeupdate', pingTime, false);
 
             player = {
                  play: play
@@ -431,7 +446,8 @@ var interface = (function()
     }
 
     function attachHandlers() {
-        $(document).bind('keydown', function(e) {
+        document.addEventListener('keydown', function(e) {
+            opera.postError(e.keyCode);
             if(e.keyCode == 179)
                 player.pause();
         }, false);

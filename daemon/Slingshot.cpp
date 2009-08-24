@@ -59,11 +59,11 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     else if(req.module == STATIC_FILE) {
         fs::path path = fs::path("public_html/") / req.object;
         if(fs::exists(path)) {
-            std::cout << path.string() << " - 200" << std::endl;
+            std::cout << method << ": " << path.string() << " - 200" << std::endl;
             req.render(path);
         }
         else {
-            std::cout << path.string() << " - 404" << std::endl;
+            std::cout << method << ": " << path.string() << " - 404" << std::endl;
             req.fail(404);
         }
     }
@@ -142,8 +142,9 @@ int main(int argc, char *argv[])
     test.write("test.jpg", JPEG);*/
 
     Indexer index = Indexer();
-    index.addFolder("/home/peroo/raid/flac_inc/", true);
-    //index.addFolder("/home/peroo/raid/inc/unsorted_music/", false);
+    //index.addFolder("/home/peroo/test/", true);
+    //index.addFolder("/home/peroo/raid/flac_inc/", true);
+    //index.addFolder("/home/peroo/raid/inc/unsorted_music/", true);
     //index.addFolder("/home/peroo/raid/inc/Flac/", false);
     //index.addFolder("/home/peroo/raid/inc/incoming/", false);
 

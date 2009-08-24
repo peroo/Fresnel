@@ -2,6 +2,7 @@
 #define AUDIOMETADATA_H
 
 #include <taglib/vorbisfile.h>
+#include <taglib/mpegfile.h>
 #include <taglib/xiphcomment.h>
 #include <taglib/id3v1tag.h>
 #include <taglib/id3v2tag.h>

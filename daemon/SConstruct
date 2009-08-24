@@ -4,7 +4,7 @@ env = Environment()
 #env['LINKERFORPROGRAMS'] = 'icpc'
 
 if ARGUMENTS.get('debug', 0):
-    env['CCFLAGS'] = '-g'
+    env['CCFLAGS'] = '-g -D_FILE_OFFSET_BITS=64'
 elif ARGUMENTS.get('optimize', 0):
 #    env['CCFLAGS'] = '-fast'
 #    env['CCFLAGS'] = '-O9'
@@ -13,7 +13,7 @@ elif ARGUMENTS.get('optimize', 0):
 elif ARGUMENTS.get('valgrind', 0):
     env['CCFLAGS'] = '-O0 -g'
 
-#env.Append( RPATH = '/opt/intel/Compiler/11.0/083/lib/ia32/');
+env.Append( RPATH = '/usr/local/lib/');
 
 env.Program(['Slingshot.cpp', 
          'JavaScript.cpp', 
@@ -27,6 +27,7 @@ env.Program(['Slingshot.cpp',
          'Audio/AudioEncoder.cpp',
          'Audio/AudioDecoder.cpp',
          'Audio/FLACDecoder.cpp', 
+         'Audio/MP3Decoder.cpp',
          'Audio/VorbisEncoder.cpp', 
          'Audio/Metadata.cpp',
          'Image/Image.cpp', 
@@ -37,6 +38,7 @@ LIBS=['v8_g',
       'boost_filesystem', 
       'FLAC++', 
       'vorbisenc', 
+      'mpg123',
       'jpeg', 
       'png',
       'tag',

@@ -67,7 +67,7 @@ bool Indexer::scanFile(const fs::path &file, int path)
 
     std::string ext = fs::extension(file);
     int index = -1;
-    if(ext == ".flac" || ext == ".ogg") {
+    if(ext == ".flac" || ext == ".ogg" /*|| ext == ".mp3"*/) {
         //std::cout << "Audio:\t\"" << file.leaf() << "\" ----- ";
         index = db->insertAudio(file, path);
     }

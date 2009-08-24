@@ -14,12 +14,13 @@ class AudioEncoder {
         virtual bool start() = 0;
         bool init(int channels, float quality);
         void feed(int count, const int * const buffer[]);
+        void feed(int count, unsigned char *_buffer);
         bool isFeeding();
         void feedingDone();
 
         const std::string mimetype;
     protected:
-        std::vector< std::vector<int> > buffer;
+        std::vector< std::vector<float> > buffer;
         pthread_mutex_t mutex;
         Audio *parent;
         float quality;

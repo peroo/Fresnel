@@ -88,7 +88,8 @@ bool VorbisEncoder::start()
         pthread_mutex_lock(&mutex);
         for(i = 0; i < channels; ++i) {
             for(j = 0; j < count; ++j) {
-                buf[i][j] = buffer[i][pos + j] / 32768.f;
+                //TODO: memcpy instead of iterating
+                buf[i][j] = buffer[i][pos + j];
             }
         }
         pos += count;

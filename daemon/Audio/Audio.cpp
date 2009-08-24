@@ -1,6 +1,7 @@
 #include "Audio.h"
 #include "Metadata.h"
 #include "FLACDecoder.h"
+#include "MP3Decoder.h"
 #include "VorbisEncoder.h"
 
 #include <boost/filesystem/path.hpp>
@@ -50,6 +51,9 @@ bool Audio::load(int output)
     //std::cout << "EXTENSION: " << extension << std::endl;
     if(extension == ".flac") {
         decoder = new FLACDecoder(path);
+    }
+    else if(extension == ".mp3") {
+        decoder = new MP3Decoder(path);
     }
     if(output == SLING_VORBIS) {
         std::cout << "Encoding in VORBIS..." << std::endl;

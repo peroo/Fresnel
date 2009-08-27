@@ -9,6 +9,7 @@ var util = (function()
     }
 
     var log = window.opera ? window.opera.postError : window.console ? window.console.log : function(){};
+    log = function(){};
 
     return {
          pad:           pad
@@ -296,7 +297,7 @@ var player = (function()
 
 var albumArt = (function()
 {
-    var img, nav;
+    var img, nav, current;
 
     var init = function() {
         img = document.getElementById('art_view');
@@ -338,8 +339,11 @@ var albumArt = (function()
     }
 
     var changeImg = function(id) {
+        if(current == id) return;
+
         $('.active', nav).removeClass('active');
         if(id) {
+            current = id;
             img.src = "/resource/" + id;
             $('li[data-id=' + id + ']', nav).addClass('active');
         }
@@ -447,7 +451,7 @@ var interface = (function()
 
     function attachHandlers() {
         document.addEventListener('keydown', function(e) {
-            opera.postError(e.keyCode);
+            util.log(e.keyCode);
             if(e.keyCode == 179)
                 player.pause();
         }, false);

@@ -21,11 +21,8 @@ void killDecode(void *decoder)
 void* decode(void *decoder)
 {
     pthread_cleanup_push(killDecode, decoder);
-    time_t start = time(NULL);
     AudioDecoder *dec = static_cast<AudioDecoder*>(decoder);
     dec->start();
-    time_t end = time(NULL);
-    std::cout << "Decoding finished in: " << end - start << "s." << std::endl;
     pthread_cleanup_pop(1);
 }
 
@@ -38,11 +35,8 @@ void killEncode(void *encoder)
 void* encode(void *encoder)
 {
     pthread_cleanup_push(killEncode, encoder);
-    time_t start = time(NULL);
     AudioEncoder *enc = static_cast<AudioEncoder*>(encoder);
     enc->start();
-    time_t end = time(NULL);
-    std::cout << "Encoding finished in: " << end - start << "s." << std::endl;
     pthread_cleanup_pop(1);
 }
 

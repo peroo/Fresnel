@@ -33,6 +33,11 @@ bool Image::load()
     return true;
 }
 
+bool Image::done()
+{
+    return true;
+}
+
 std::string Image::getMimetype()
 {
     return "image/jpeg";

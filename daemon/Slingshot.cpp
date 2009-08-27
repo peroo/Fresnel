@@ -30,16 +30,15 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
         *ptr = &dummy;
         return MHD_YES;
     }
-    *ptr = NULL;
 
-    HttpRequest req = HttpRequest(connection, url, method);
-    req.init();
+    HttpRequest *req = new HttpRequest(connection, url, method);
+    req->init();
 
     Database db = Database();
 
-    if(req.module == RESOURCE) {
+    if(req->module == RESOURCE) {
         Resource *res;
-        int type = db.getResourceType(atoi(req.object.c_str()));
+        int type = db.getResourceType(atoi(req->object.c_str()));
         if(type == AUDIO) {
             res = new Audio();
         }
@@ -47,26 +46,28 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
             res = new Image();
         }
 
-        res = res->init(atoi(req.object.c_str()));
+        res = res->init(atoi(req->object.c_str()));
         res->load();
-        req.render(res);
+        req->render(res);
     }
-    else if(req.module == DATA) {
+    else if(req->module == DATA) {
         JavaScript script = JavaScript();
-        script.run(&req);
-        req.render(&script);
+        script.run(req);
+        req->render(&script);
     }
-    else if(req.module == STATIC_FILE) {
-        fs::path path = fs::path("public_html/") / req.object;
+    else if(req->module == STATIC_FILE) {
+        fs::path path = fs::path("public_html/") / req->object;
         if(fs::exists(path)) {
             std::cout << method << ": " << path.string() << " - 200" << std::endl;
-            req.render(path);
+            req->render(path);
         }
         else {
             std::cout << method << ": " << path.string() << " - 404" << std::endl;
-            req.fail(404);
+            req->fail(404);
         }
     }
+
+    *ptr = req;
 
     return 1;
 }
@@ -80,8 +81,9 @@ void connectionClosed(void *cls, struct MHD_Connection *connection, void **con_c
         std::cout << "Error";
     else if(toe == MHD_REQUEST_TERMINATED_TIMEOUT_REACHED)
         std::cout << "Timeout";
-
     std::cout << std::endl;*/
+
+    delete (HttpRequest*)*con_cls;
 }
 
 bool Slingshot::init(bool test) {

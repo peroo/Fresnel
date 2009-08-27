@@ -12,6 +12,12 @@
 
 namespace fs = boost::filesystem;
 
+HttpRequest::~HttpRequest()
+{
+    if(!resource || !resource->done())
+        delete resource;
+}
+
 bool HttpRequest::init()
 {
     MHD_get_connection_values(connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
@@ -85,6 +91,7 @@ const char* itos(int number)
 
 void HttpRequest::render(Resource *res)
 {
+    resource = res;
     response = MHD_create_response_from_callback(-1, 32*1024, Resource::staticReader, res, NULL);
     MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
     //MHD_add_response_header(response, "Content-Length", itos(res->getSize()));

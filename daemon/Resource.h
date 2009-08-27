@@ -14,7 +14,7 @@ enum res_type {
 class Resource {
     public:
         Resource() : loaded(false) {}
-        virtual ~Resource() {}
+        virtual ~Resource();
         Resource* init(int index);
         bool init(boost::filesystem::path path);
         int static staticReader(void *res, uint64_t pos, char *buffer, int max);
@@ -24,6 +24,7 @@ class Resource {
         virtual int read(int pos, int max, char *buffer) = 0;
         virtual std::string getMimetype() = 0;
         virtual int getSize() = 0;
+        virtual bool done() = 0;
 
         int fileIndex;
         static std::vector<Resource*> resources;

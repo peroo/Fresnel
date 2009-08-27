@@ -22,7 +22,8 @@ enum req_module {
 
 class HttpRequest {
     public:
-        HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method) : connection(_connection), url(_url), method(_method) {}
+        HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method) : resource(NULL), connection(_connection), url(_url), method(_method) {}
+        ~HttpRequest();
         bool init();
         void render(Resource *res);
         void render(JavaScript *script);
@@ -40,11 +41,11 @@ class HttpRequest {
         req_module                  module;
         std::string                 object;
         std::vector<std::string>    parameters;
-        Resource                   *resource;
 
     private:
         MHD_Connection  *connection;
         MHD_Response    *response;
+        Resource                   *resource;
 
         void parseURL();
         static int headerIterator(void *, MHD_ValueKind, const char *, const char *);

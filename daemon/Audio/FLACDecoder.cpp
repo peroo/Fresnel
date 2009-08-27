@@ -2,9 +2,13 @@
 #include "AudioEncoder.h"
 
 #include <iostream>
+#include <pthread.h>
 
 FLAC__StreamDecoderWriteStatus FLACDecoder::write_callback(const FLAC__Frame *frame, const FLAC__int32 * const buffer[])
 {
+    if(die)
+        pthread_exit(NULL);
+
     encoder->feed(frame->header.blocksize, buffer);
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }

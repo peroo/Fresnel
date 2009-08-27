@@ -19,6 +19,7 @@ class Audio : public Resource {
         ~Audio();
         bool load(int output);
         bool load();
+        bool done();
         std::string getMimetype();
         int getSize();
         int read(int pos, int max, char *buffer);
@@ -32,6 +33,8 @@ class Audio : public Resource {
         AudioDecoder *decoder;
         AudioEncoder *encoder;
         pthread_mutex_t mutex;
+        pthread_t decThread;
+        pthread_t encThread;
         bool encoding;
         std::vector<unsigned char> data;
 };

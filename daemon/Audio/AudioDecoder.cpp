@@ -7,3 +7,7 @@ void AudioDecoder::init(AudioEncoder *_encoder)
 {
     encoder = _encoder;
 }
+
+void AudioDecoder::kill() {
+    die = true;
+}

@@ -9,7 +9,7 @@ class Audio;
 
 class AudioEncoder {
     public:
-        AudioEncoder(std::string _mimetype, Audio* parent) : mimetype(_mimetype), parent(parent) {}
+        AudioEncoder(std::string _mimetype, Audio* parent) : mimetype(_mimetype), parent(parent), die(false) {}
         virtual ~AudioEncoder() {};
         virtual bool start() = 0;
         bool init(int channels, float quality);
@@ -17,6 +17,7 @@ class AudioEncoder {
         void feed(int count, unsigned char *_buffer);
         bool isFeeding();
         void feedingDone();
+        void kill();
 
         const std::string mimetype;
     protected:
@@ -27,6 +28,7 @@ class AudioEncoder {
         int  channels;
         bool feeding;
         bool active;
+        bool die;
 };
 
 #endif

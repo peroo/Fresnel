@@ -45,3 +45,10 @@ void AudioEncoder::feedingDone() {
 bool AudioEncoder::isFeeding() {
     return feeding;
 }
+
+void AudioEncoder::kill() {
+    // Locking so we don't kill ourself while the encoder is trying to save
+    pthread_mutex_lock(&mutex);
+    die = true;
+    pthread_mutex_unlock(&mutex);
+}

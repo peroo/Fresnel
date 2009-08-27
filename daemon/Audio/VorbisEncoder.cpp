@@ -23,7 +23,6 @@ bool VorbisEncoder::start()
 {
     eos = false;
     feeding = true;
-    active = true;
 
     vorbis_info_init(&vi);
     if(vorbis_encode_init_vbr(&vi, channels, 44100, quality)) {
@@ -61,6 +60,8 @@ bool VorbisEncoder::start()
             int result = ogg_stream_flush(&os, &og);
             if(result == 0) break;
 
+            if(die)
+                pthread_exit(NULL);
             parent->saveData(og.header, og.header_len);
             parent->saveData(og.body, og.body_len);
         }
@@ -107,6 +108,9 @@ bool VorbisEncoder::start()
                 while(!eos) {
                     int result = ogg_stream_pageout(&os, &og);
                     if(result==0) break;
+                    if(die)
+                        pthread_exit(NULL);
+
                     parent->saveData(og.header, og.header_len);
                     parent->saveData(og.body, og.body_len);
     
@@ -118,7 +122,6 @@ bool VorbisEncoder::start()
     //ProfilerStop();
 
     buffer.clear();
-    active = false;
     parent->encodingFinished();
 
     return true;

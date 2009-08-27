@@ -12,30 +12,46 @@
 
 namespace fs = boost::filesystem;
 
+void killDecode(void *decoder)
+{
+    AudioDecoder *dec = static_cast<AudioDecoder*>(decoder);
+    delete dec;
+    dec = NULL;
+}
 void* decode(void *decoder)
 {
+    pthread_cleanup_push(killDecode, decoder);
     time_t start = time(NULL);
     AudioDecoder *dec = static_cast<AudioDecoder*>(decoder);
     dec->start();
     time_t end = time(NULL);
     std::cout << "Decoding finished in: " << end - start << "s." << std::endl;
-    delete dec;
+    pthread_cleanup_pop(1);
 }
 
+void killEncode(void *encoder)
+{
+    AudioEncoder *enc = static_cast<AudioEncoder*>(encoder);
+    delete enc;
+    enc = NULL;
+}
 void* encode(void *encoder)
 {
+    pthread_cleanup_push(killEncode, encoder);
     time_t start = time(NULL);
     AudioEncoder *enc = static_cast<AudioEncoder*>(encoder);
     enc->start();
     time_t end = time(NULL);
     std::cout << "Encoding finished in: " << end - start << "s." << std::endl;
-    delete enc;
+    pthread_cleanup_pop(1);
 }
 
 Audio::~Audio()
 {
-    delete decoder;
-    delete encoder;
+    if(decoder)
+        decoder->kill();
+    if(encoder)
+        encoder->kill();
     delete metadata;
 }
 
@@ -65,14 +81,9 @@ bool Audio::load(int output)
     mimetype = encoder->mimetype;
     decoder->init(encoder);
 
-    pthread_t encThread;
-    pthread_t decThread;
-
     encoding = true;
     pthread_create(&decThread, NULL, decode, decoder);
     pthread_create(&encThread, NULL, encode, encoder);
-    encoder = NULL;
-    decoder = NULL;
 
     return true;
 }
@@ -80,6 +91,11 @@ bool Audio::load(int output)
 bool Audio::load()
 {
     return Audio::load(SLING_VORBIS);
+}
+
+bool Audio::done()
+{
+    return !encoding;
 }
 
 std::string Audio::getMimetype()

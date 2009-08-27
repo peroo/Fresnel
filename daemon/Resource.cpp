@@ -11,9 +11,19 @@ std::vector<Resource*> Resource::resources;
 
 bool Resource::load(int index) {}
 bool Resource::load() {}
+bool Resource::done() {}
 std::string Resource::getMimetype() {}
 int Resource::getSize() {}
 int Resource::read(int pos, int max, char *buffer) {}
+
+Resource::~Resource() {
+    std::vector<Resource*>::iterator iter;
+    for(iter = resources.begin(); iter < resources.end(); ++iter) {
+        if(this == *iter) {
+            resources.erase(iter);
+        }
+    }
+}
 
 Resource* Resource::init(int index)
 {

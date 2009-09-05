@@ -2,11 +2,9 @@
 #include "Audio.h"
 #include "Metadata.h"
 
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 #include <iostream>
-#include <pthread.h>
-#include <cstdlib>
-#include <unistd.h>
-#include <google/profiler.h>
 
 #include <map>
 
@@ -60,8 +58,7 @@ bool VorbisEncoder::start()
             int result = ogg_stream_flush(&os, &og);
             if(result == 0) break;
 
-            if(die)
-                pthread_exit(NULL);
+            boost::this_thread::interruption_point();
             parent->saveData(og.header, og.header_len);
             parent->saveData(og.body, og.body_len);
         }
@@ -78,15 +75,13 @@ bool VorbisEncoder::start()
         usleep(10000);
     }
 
-    //ProfilerStart("/home/peroo/server/out.prof");
-
     while(feeding || (buffer.front().size() - pos) > 0) {
         size = buffer.front().size();
         count = size - pos < max ? size - pos : max;
             
         float **buf = vorbis_analysis_buffer(&vd, count);
     
-        pthread_mutex_lock(&mutex);
+        mutex.lock();
         for(i = 0; i < channels; ++i) {
             for(j = 0; j < count; ++j) {
                 //TODO: memcpy instead of iterating
@@ -94,7 +89,7 @@ bool VorbisEncoder::start()
             }
         }
         pos += count;
-        pthread_mutex_unlock(&mutex);
+        mutex.unlock();
 
         vorbis_analysis_wrote(&vd, count);
 
@@ -108,9 +103,8 @@ bool VorbisEncoder::start()
                 while(!eos) {
                     int result = ogg_stream_pageout(&os, &og);
                     if(result==0) break;
-                    if(die)
-                        pthread_exit(NULL);
 
+                    boost::this_thread::interruption_point();
                     parent->saveData(og.header, og.header_len);
                     parent->saveData(og.body, og.body_len);
     
@@ -119,9 +113,8 @@ bool VorbisEncoder::start()
             }
         }
     }
-    //ProfilerStop();
 
-    buffer.clear();
+    boost::this_thread::interruption_point();
     parent->encodingFinished();
 
     return true;

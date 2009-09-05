@@ -14,7 +14,6 @@ class AudioDecoder {
         AudioDecoder(boost::filesystem::path _file) : file(_file), die(false) {}
         void init(AudioEncoder *_encoder);
         virtual bool start() = 0;
-        void kill();
     protected:
         AudioEncoder *encoder;
         boost::filesystem::path file;        

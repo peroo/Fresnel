@@ -95,9 +95,10 @@ int Database::insertAudio(const fs::path &file, int path)
         return -1;
     }
 
-    Audio audio = Audio();
-    audio.init(file);
-    Metadata *meta = audio.getMetadata();
+    //TODO: Create on stack instead of heap
+    Audio *audio = new Audio();
+    audio->init(file);
+    Metadata *meta = audio->getMetadata();
 
     int artistId = getArtistId(meta->artist, meta->artist_sort);
     int albumId = getAlbumId(meta->album, meta->date, getArtistId(meta->albumartist, meta->albumartist_sort));
@@ -113,6 +114,7 @@ int Database::insertAudio(const fs::path &file, int path)
     bindString(meta->musicbrainz_trackid);
     step();
 
+    delete audio;
     return last_insert_id();
 }
 

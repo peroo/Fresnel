@@ -8,7 +8,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <pthread.h>
 
 namespace fs = boost::filesystem;
 

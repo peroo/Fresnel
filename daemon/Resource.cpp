@@ -42,6 +42,7 @@ Resource* Resource::init(int index)
     }
 
     if(resources.size() >= 5) {
+        std::cout << "Dropping resource" << std::endl;
         delete resources.back();
     }
     resources.insert(resources.begin(), this);

@@ -5,7 +5,8 @@
 #include "AudioDecoder.h"
 #include "AudioEncoder.h"
 
-#include <pthread.h>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 #define SLING_FLAC 0
 #define SLING_VORBIS 1
@@ -32,9 +33,9 @@ class Audio : public Resource {
         std::string mimetype;
         AudioDecoder *decoder;
         AudioEncoder *encoder;
-        pthread_mutex_t mutex;
-        pthread_t decThread;
-        pthread_t encThread;
+        boost::mutex mutex;
+        boost::thread decThread;
+        boost::thread encThread;
         bool encoding;
         std::vector<unsigned char> data;
 };

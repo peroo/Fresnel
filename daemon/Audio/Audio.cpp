@@ -6,46 +6,43 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
-#include <pthread.h>
-#include <ctime>
-#include <cstring>
 
 namespace fs = boost::filesystem;
 
-void killDecode(void *decoder)
+void killDecode(AudioDecoder *decoder)
 {
-    AudioDecoder *dec = static_cast<AudioDecoder*>(decoder);
-    delete dec;
-    dec = NULL;
+    delete decoder;
+    decoder = NULL;
 }
-void* decode(void *decoder)
+void decode(AudioDecoder *decoder)
 {
-    pthread_cleanup_push(killDecode, decoder);
-    AudioDecoder *dec = static_cast<AudioDecoder*>(decoder);
-    dec->start();
-    pthread_cleanup_pop(1);
+    try {
+        decoder->start();
+    }
+    catch(boost::thread_interrupted &exception) {}
+    killDecode(decoder);
 }
 
-void killEncode(void *encoder)
+void killEncode(AudioEncoder *encoder)
 {
-    AudioEncoder *enc = static_cast<AudioEncoder*>(encoder);
-    delete enc;
-    enc = NULL;
+    delete encoder;
+    encoder = NULL;
 }
-void* encode(void *encoder)
+void encode(AudioEncoder *encoder)
 {
-    pthread_cleanup_push(killEncode, encoder);
-    AudioEncoder *enc = static_cast<AudioEncoder*>(encoder);
-    enc->start();
-    pthread_cleanup_pop(1);
+    try {
+        encoder->start();
+    }
+    catch(boost::thread_interrupted &exception) {}
+    killEncode(encoder);
 }
 
 Audio::~Audio()
 {
     if(decoder)
-        decoder->kill();
+        decThread.interrupt();
     if(encoder)
-        encoder->kill();
+        encThread.interrupt();
     delete metadata;
 }
 
@@ -55,8 +52,6 @@ bool Audio::load(int output)
         return true;
     else
         loaded = true;
-
-    pthread_mutex_init(&mutex, NULL);
 
     //std::cout << "EXTENSION: " << extension << std::endl;
     if(extension == ".flac") {
@@ -76,8 +71,8 @@ bool Audio::load(int output)
     decoder->init(encoder);
 
     encoding = true;
-    pthread_create(&decThread, NULL, decode, decoder);
-    pthread_create(&encThread, NULL, encode, encoder);
+    decThread = boost::thread(decode, decoder);
+    encThread = boost::thread(encode, encoder);
 
     return true;
 }
@@ -123,9 +118,8 @@ Metadata* Audio::getMetadata()
 
 void Audio::saveData(unsigned char *buffer, int count)
 {
-    pthread_mutex_lock(&mutex);
+    boost::mutex::scoped_lock lock(mutex);
     data.insert(data.end(), buffer, buffer + count);
-    pthread_mutex_unlock(&mutex);
 }
 
 void Audio::encodingFinished()
@@ -138,10 +132,9 @@ int Audio::read(int pos, int max, char *buffer)
     while(pos == data.size() && encoding)
         usleep(10000);
 
-    pthread_mutex_lock(&mutex);
+    boost::mutex::scoped_lock lock(mutex);
     int count = pos + max > data.size() ? data.size() - pos : max;
     memcpy(buffer, &data[pos], count);
-    pthread_mutex_unlock(&mutex);
 
     if(count > 0 || encoding)
         return count;

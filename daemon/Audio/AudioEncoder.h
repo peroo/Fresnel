@@ -1,9 +1,9 @@
 #ifndef AUDIOENCODER_H
 #define AUDIOENCODER_H
 
+#include <boost/thread/mutex.hpp>
 #include <string>
 #include <vector>
-#include <pthread.h>
 
 class Audio;
 
@@ -17,12 +17,11 @@ class AudioEncoder {
         void feed(int count, unsigned char *_buffer);
         bool isFeeding();
         void feedingDone();
-        void kill();
 
         const std::string mimetype;
     protected:
         std::vector< std::vector<float> > buffer;
-        pthread_mutex_t mutex;
+        boost::mutex mutex;
         Audio *parent;
         float quality;
         int  channels;

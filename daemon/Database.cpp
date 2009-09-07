@@ -7,6 +7,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <sqlite3.h>
 
+#include <tr1/memory>
 #include <iostream>
 #include <string>
 #include <map>
@@ -98,7 +99,8 @@ int Database::insertAudio(const fs::path &file, int path)
     //TODO: Create on stack instead of heap
     Audio *audio = new Audio();
     audio->init(file);
-    Metadata *meta = audio->getMetadata();
+    std::tr1::shared_ptr<Metadata> meta = audio->getMetadata();
+    delete audio;
 
     int artistId = getArtistId(meta->artist, meta->artist_sort);
     int albumId = getAlbumId(meta->album, meta->date, getArtistId(meta->albumartist, meta->albumartist_sort));
@@ -114,7 +116,6 @@ int Database::insertAudio(const fs::path &file, int path)
     bindString(meta->musicbrainz_trackid);
     step();
 
-    delete audio;
     return last_insert_id();
 }
 

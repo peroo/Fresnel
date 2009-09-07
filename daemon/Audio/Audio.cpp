@@ -43,7 +43,6 @@ Audio::~Audio()
         decThread.interrupt();
     if(encoder)
         encThread.interrupt();
-    delete metadata;
 }
 
 bool Audio::load(int output)
@@ -95,14 +94,14 @@ std::string Audio::getMimetype()
 int Audio::getSize()
 {
     return -1; // TODO
-    Metadata *meta = getMetadata();
+    std::tr1::shared_ptr<Metadata> meta = getMetadata();
     return 12500 * meta->length;
 }
 
-Metadata* Audio::getMetadata()
+std::tr1::shared_ptr<Metadata> Audio::getMetadata()
 {
     if(metadata == NULL) {
-        metadata = new Metadata();
+        metadata = std::tr1::shared_ptr<Metadata>(new Metadata);
         if(indexed) {
             //TODO: Get from db instead of file
             //meta->fetchData(fileIndex);

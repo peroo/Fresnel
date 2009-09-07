@@ -44,7 +44,6 @@ LIBS=['v8_g',
       'png',
       'tag',
       'zbar',
-      'pthread',
 #     'profiler',
 #     'tcmalloc'
 ])

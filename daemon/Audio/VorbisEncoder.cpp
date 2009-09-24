@@ -34,8 +34,8 @@ bool VorbisEncoder::start()
 
     vorbis_comment_init(&vc);
     vorbis_comment_add_tag(&vc, "ENCODER", "Slingshot v0.01");
-    std::tr1::shared_ptr<Metadata> meta = parent->getMetadata();
-    std::map<const char*, std::string> metaArray = meta->getFields();
+    Metadata meta = parent->getMetadata();
+    std::map<const char*, std::string> metaArray = meta.getFields();
 
     for(std::map<const char*, std::string>::iterator it = metaArray.begin(); it != metaArray.end(); ++it) {
         vorbis_comment_add_tag(&vc, it->first, it->second.c_str());

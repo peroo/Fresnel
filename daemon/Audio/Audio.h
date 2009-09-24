@@ -4,6 +4,7 @@
 #include "../Resource.h"
 #include "AudioDecoder.h"
 #include "AudioEncoder.h"
+#include "Metadata.h"
 
 #include <tr1/memory>
 #include <boost/thread/thread.hpp>
@@ -12,8 +13,6 @@
 #define SLING_FLAC 0
 #define SLING_VORBIS 1
 #define SLING_MP3 2
-
-class Metadata;
 
 class Audio : public Resource {
     public:
@@ -27,10 +26,10 @@ class Audio : public Resource {
         int read(int pos, int max, char *buffer);
         void saveData(unsigned char *buffer, int count);
         void encodingFinished();
-        std::tr1::shared_ptr<Metadata> getMetadata();
+        Metadata getMetadata();
 
     private:
-        std::tr1::shared_ptr<Metadata> metadata;
+        Metadata metadata;
         std::string mimetype;
         AudioDecoder *decoder;
         AudioEncoder *encoder;

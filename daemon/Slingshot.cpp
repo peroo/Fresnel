@@ -144,10 +144,10 @@ int main(int argc, char *argv[])
     test.write("test.jpg", JPEG);*/
 
     Indexer index = Indexer();
-    index.addFolder("/home/peroo/raid/flac_inc/", true);
-    //index.addFolder("/home/peroo/raid/inc/unsorted_music/", false);
-    //index.addFolder("/home/peroo/raid/inc/Flac/", false);
-    //index.addFolder("/home/peroo/raid/inc/incoming/", false);
+    index.addFolder("/home/peroo/raid/flac_inc/");
+    index.addFolder("/home/peroo/raid/inc/unsorted_music/");
+    index.addFolder("/home/peroo/raid/inc/Flac/");
+    index.addFolder("/home/peroo/raid/inc/incoming/");
 
     while(1) {
         sleep(600);

@@ -91,28 +91,25 @@ std::string Audio::getMimetype()
     return mimetype;
 }
 
-int Audio::getSize()
+Metadata Audio::getMetadata()
 {
-    return -1; // TODO
-    std::tr1::shared_ptr<Metadata> meta = getMetadata();
-    return 12500 * meta->length;
-}
-
-std::tr1::shared_ptr<Metadata> Audio::getMetadata()
-{
-    if(metadata == NULL) {
-        metadata = std::tr1::shared_ptr<Metadata>(new Metadata);
+    if(metadata.loaded()) {
         if(indexed) {
             //TODO: Get from db instead of file
             //meta->fetchData(fileIndex);
-            metadata->loadData(path);
+            metadata.loadData(path);
         }
         else {
-            metadata->loadData(path);
+            metadata.loadData(path);
         }
     }
     
     return metadata;
+}
+
+int Audio::getSize()
+{
+    return -1;
 }
 
 void Audio::saveData(unsigned char *buffer, int count)

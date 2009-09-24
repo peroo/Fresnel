@@ -6,14 +6,22 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
+#include <string>
+#include <vector>
+
 class Indexer {
     public:
-        Indexer();
-        int addFolder(const std::string &filename, bool purge);
+        Indexer() {};
+        int addFolder(const std::string &filename);
     private:
-        Database *db;
-        int scanFolder(const boost::filesystem::path &folder, int parent);
-        bool scanFile(const boost::filesystem::path &file, int parent);
+        Database db;
+        int added;
+        int removed;
+        int updated;
+
+        void scanFolder(const boost::filesystem::path &folder, int parent);
+        void updateFolder(const boost::filesystem::path &folder, int index, int parent);
+        void updateFiles(int index, const std::vector<boost::filesystem::path> &files);
 };
 
 #endif

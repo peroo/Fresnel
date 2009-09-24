@@ -14,9 +14,12 @@
 
 class Metadata {
     public:
+        Metadata() : _loaded(false) {}
+        ~Metadata() {}
         bool loadData(boost::filesystem::path path);
         bool fetchData(int index);
         std::map<const char*, std::string> getFields();
+        bool loaded();
 
         std::string album;
         std::string artist;
@@ -38,6 +41,8 @@ class Metadata {
         bool parseXiphComment(TagLib::Ogg::XiphComment *tag);
         bool parseId3v1(TagLib::ID3v1::Tag *tag);
         bool parseId3v2(TagLib::ID3v2::Tag *tag);
+
+        bool _loaded;
 };
 
 #endif

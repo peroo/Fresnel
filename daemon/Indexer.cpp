@@ -1,28 +1,22 @@
 #include "Indexer.h"
 #include "Audio/Audio.h"
 #include "Database.h"
+#include "ResFile.h"
 
+#include "inotify-cxx/inotify-cxx.h"
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
 
-#include <google/heap-profiler.h>
 #include <iostream>
+#include <vector>
+#include <map>
 
 namespace fs = boost::filesystem;
 
-Indexer::Indexer()
+int Indexer::addFolder(const std::string &directory)
 {
-    db = new Database();
-}
-
-int Indexer::addFolder(const std::string &directory, bool purge)
-{
-    fs::path dir = fs::path(directory);
-
-    // TODO: Purge var is dumb
-    if(purge)
-        db->removeDir(dir);
+    fs::path dir(directory);
 
     if(!fs::exists(dir)) {
         std::cout << "Path \"" << dir.file_string() << "\" doesn't exist." << std::endl;
@@ -31,60 +25,104 @@ int Indexer::addFolder(const std::string &directory, bool purge)
         std::cout << "Path \"" << dir.file_string() << "\" isn't a directory." << std::endl;
         return 0;
     } else if(fs::is_symlink(dir)) {
-        std::cout << "Path \"" << dir.file_string() << "\" is a symlink." << std::endl;
+        std::cout << "Path \"" << dir.file_string() << "\" is a symlink. Skipping." << std::endl;
         return 0;
     } 
+
+    added = removed = updated = 0;
+
+    // TODO: Investigate if transactions make a difference
+    Database db = Database();
+    db.startTransaction();
+
+    int path = db.getPath(dir.string());
+    if(path < 0) {
+        scanFolder(dir, 0);
+    }
+    else {
+        updateFolder(dir, path, 0);
+    }
+
+    db.commitTransaction();
     
-    int result = scanFolder(dir, 0);
-    std::cout << "Finished scanning " << result << " files from \"" << directory << "\"." << std::endl;
+    std::cout << "Finished scanning \"" << directory << "\"." << std::endl;
+    std::cout << "------------\nAdded: " << added << "\nUpdated: " << updated << "\nRemoved: " << removed << "\n" << std::endl;
 }
 
-int Indexer::scanFolder(const fs::path &dir, int parent)
+void Indexer::updateFolder(const fs::path &dir, int pathIndex, int parent)
 {
-    int count = 0, dirID;
-
-    
-    dirID = db->insertDir(dir, parent, NULL);
-    //std::cout << "Folder:\t\"" << dir.leaf() << "\"" << std::endl << "===================================" << std::endl;
+    std::map<std::string, int> children = db.getPathChildren(pathIndex);
+    std::vector<fs::path> files;
 
     fs::directory_iterator endIter;
-    for(fs::directory_iterator iter(dir); iter != endIter; ++iter) {
+    for(fs::directory_iterator iter(dir); iter!= endIter; ++iter) {
         if(fs::is_directory(*iter)) {
-            if(!fs::is_symlink(*iter)) {
-                count += scanFolder(*iter, dirID);
+            auto result = children.find(iter->string() + "/");
+            if(result != children.end()) {
+                updateFolder(*iter, result->second, pathIndex);
+                children.erase(result);
             }
-        } else {
-            if(scanFile(*iter, dirID))
-                count++;
+            else {
+                scanFolder(*iter, pathIndex);
+            }
+        }
+        else {
+            files.push_back(*iter);
+        }
+    }
+    
+    updateFiles(pathIndex, files);
+
+    for(auto iter = children.begin(); iter != children.end(); ++iter) {
+        db.removeDir(iter->second);
+    }
+}
+
+// TODO: Investigate whether deferring file insertion until after dir traversal might pay off
+void Indexer::scanFolder(const fs::path &dir, int parent)
+{
+    int pathIndex = db.insertDir(dir, parent, NULL);
+
+    fs::directory_iterator endIter;
+    for(fs::directory_iterator iter(dir); iter!= endIter; ++iter) {
+        if(fs::is_directory(*iter)) {
+            scanFolder(*iter, pathIndex);
+        }
+        else {
+            ResFile file;
+            if(file.init(*iter, pathIndex)) {
+                file.insert();
+                ++added;
+            }
+        }
+    }
+}
+
+void Indexer::updateFiles(int path, const std::vector<fs::path> &files) {
+    std::map<std::string, ResFile> dbFiles = db.getFiles(path);
+
+    for(auto iter = files.begin(); iter != files.end(); ++iter) {
+        auto result = dbFiles.find(iter->leaf());
+        if(result != dbFiles.end()) {
+            if(fs::last_write_time(*iter) > result->second.modified()) {
+                result->second.update();
+                ++updated;
+            }
+            dbFiles.erase(result);
+        }
+        else {
+            ResFile file = ResFile();
+            if(file.init(*iter, path)) {
+                file.insert();
+                ++added;
+            }
         }
     }
 
-    return count;
+    for(auto iter = dbFiles.begin(); iter != dbFiles.end(); ++iter) {
+        iter->second.remove();
+        ++removed;
+    }
+
 }
 
-bool Indexer::scanFile(const fs::path &file, int path)
-{
-
-    std::string ext = fs::extension(file);
-    int index = -1;
-    if(ext == ".flac" || ext == ".ogg" /*|| ext == ".mp3"*/) {
-        //std::cout << "Audio:\t\"" << file.leaf() << "\" ----- ";
-        index = db->insertAudio(file, path);
-    }
-    else if(ext == ".jpg" || ext == ".jpeg" || ext == ".png") {
-        //std::cout << "Image:\t\"" << file.leaf() << "\" ----- ";
-        index = db->insertImage(file, path);
-    }
-    else {
-        return false;
-    }
-
-    if(index > 0) {
-        //std::cout << " Inserted correctly, index #" << index << "." << std::endl;
-        return true;
-    }
-    else {
-        //std::cout << file.leaf() << " - insertion failed." << std::endl;
-        return false;
-    }
-}

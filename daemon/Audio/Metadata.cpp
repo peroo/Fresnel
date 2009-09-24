@@ -34,7 +34,14 @@ bool Metadata::loadData(fs::path path)
         parseProperties(mp3);
     }
 
+    _loaded = true;
+
     return true;
+}
+
+bool Metadata::loaded()
+{
+    return _loaded;
 }
 
 bool Metadata::fetchData(int index)

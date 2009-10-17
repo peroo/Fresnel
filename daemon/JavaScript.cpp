@@ -141,7 +141,7 @@ std::string JavaScript::ParseHandle(Handle<Value> value)
         String::Utf8Value val(value);
         std::string str = *val;
         int i=0;
-        int pos = str.find('"');
+        unsigned int pos = str.find('"');
         while(pos != std::string::npos) {
             i = pos;
             str.insert(i, 1, '\\');
@@ -161,7 +161,7 @@ std::string JavaScript::ParseHandle(Handle<Value> value)
     else if(value->IsArray()) {
         std::vector<std::string> out;
         Local<Array> val = Array::Cast(*value);
-        for(int i=0; i < val->Length(); ++i) {
+        for(unsigned int i=0; i < val->Length(); ++i) {
             Handle<Value> asd = val->Get(Number::New(i));
             out.push_back(ParseHandle(asd));
         }
@@ -188,7 +188,7 @@ std::string JavaScript::ParseHandle(Handle<Value> value)
         std::vector<std::string> out;
         Local<Object> val = value->ToObject();
         Local<Array> arr = val->GetPropertyNames();
-        for(int i=0; i < arr->Length(); ++i) {
+        for(unsigned int i=0; i < arr->Length(); ++i) {
             Local<Value> key = arr->Get(Number::New(i));
 
             String::Utf8Value str(key->ToString());
@@ -209,6 +209,8 @@ std::string JavaScript::ParseHandle(Handle<Value> value)
         
         return result;
     }
+
+    return "";
 }
 
     

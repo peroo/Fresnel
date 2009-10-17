@@ -21,7 +21,7 @@ class Resource {
 
         virtual bool load(int index) = 0;
         virtual bool load() = 0;
-        virtual int read(int pos, int max, char *buffer) = 0;
+        virtual int read(unsigned int pos, unsigned int max, char *buffer) = 0;
         virtual std::string getMimetype() = 0;
         virtual int getSize() = 0;
         virtual bool done() = 0;

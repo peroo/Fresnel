@@ -23,7 +23,7 @@ class Image : public Resource {
         bool load();
         bool load(int index);
         bool done();
-        int read(int pos, int max, char *buffer);
+        int read(unsigned int pos, unsigned int max, char *buffer);
         std::string getMimetype();
         int getSize();
 

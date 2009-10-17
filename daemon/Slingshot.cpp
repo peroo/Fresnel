@@ -23,6 +23,11 @@ namespace fs = boost::filesystem;
 
 int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **ptr)
 {
+    (void) cls;
+    (void) version;
+    (void) upload_data;
+    (void) upload_data_size;
+
     static int dummy;
 
     //TODO: Investigate parsing headers early and returning MHD_NO in some cases.
@@ -74,14 +79,17 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
 
 void connectionClosed(void *cls, struct MHD_Connection *connection, void **con_cls, MHD_RequestTerminationCode toe)
 {
-    /*std::cout << "Connection closed: ";
+    (void) cls;
+    (void) connection;
+
+    std::cout << "Connection closed: ";
     if(toe == MHD_REQUEST_TERMINATED_COMPLETED_OK)
         std::cout << "Completed OK";
     else if(toe == MHD_REQUEST_TERMINATED_WITH_ERROR)
         std::cout << "Error";
     else if(toe == MHD_REQUEST_TERMINATED_TIMEOUT_REACHED)
         std::cout << "Timeout";
-    std::cout << std::endl;*/
+    std::cout << std::endl;
 
     delete (HttpRequest*)*con_cls;
 }
@@ -124,6 +132,7 @@ bool Slingshot::init(bool test) {
         return false;
 
 	std::cout << "Init successful." << std::endl;
+    return true;
 }
 
 void Slingshot::StopServer()
@@ -133,6 +142,8 @@ void Slingshot::StopServer()
 
 int main(int argc, char *argv[])
 {
+    (void) argv;
+
     bool test = argc > 1 ? true : false;
     Slingshot slingshot = Slingshot();
     slingshot.init(test);
@@ -145,9 +156,9 @@ int main(int argc, char *argv[])
 
     Indexer index = Indexer();
     index.addFolder("/home/peroo/raid/flac_inc/");
-    index.addFolder("/home/peroo/raid/inc/unsorted_music/");
+    /*index.addFolder("/home/peroo/raid/inc/unsorted_music/");
     index.addFolder("/home/peroo/raid/inc/Flac/");
-    index.addFolder("/home/peroo/raid/inc/incoming/");
+    index.addFolder("/home/peroo/raid/inc/incoming/");*/
 
     while(1) {
         sleep(600);

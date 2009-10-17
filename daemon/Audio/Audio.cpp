@@ -9,38 +9,38 @@
 
 namespace fs = boost::filesystem;
 
-void killDecode(AudioDecoder *decoder)
-{
-    delete decoder;
-    decoder = NULL;
-}
 void decode(AudioDecoder *decoder)
 {
     try {
         decoder->start();
     }
-    catch(boost::thread_interrupted &exception) {}
-    killDecode(decoder);
+    catch(boost::thread_interrupted &exception) {
+        std::cout << "EXCEPTION! -- ";
+    }
+    delete decoder;
+    decoder = NULL;
+    std::cout << "Decoder finished" << std::endl;
 }
 
-void killEncode(AudioEncoder *encoder)
-{
-    delete encoder;
-    encoder = NULL;
-}
 void encode(AudioEncoder *encoder)
 {
     try {
         encoder->start();
     }
-    catch(boost::thread_interrupted &exception) {}
-    killEncode(encoder);
+    catch(boost::thread_interrupted &exception) {
+        std::cout << "EXCEPTION! -- ";
+    }
+    delete encoder;
+    encoder = NULL;
+    std::cout << "Encoder died." << std::endl;
 }
 
 Audio::~Audio()
 {
     if(decoder)
         decThread.interrupt();
+
+    boost::mutex::scoped_lock lock(mutex);
     if(encoder)
         encThread.interrupt();
 }
@@ -52,7 +52,6 @@ bool Audio::load(int output)
     else
         loaded = true;
 
-    //std::cout << "EXTENSION: " << extension << std::endl;
     if(extension == ".flac") {
         decoder = new FLACDecoder(path);
     }
@@ -93,15 +92,11 @@ std::string Audio::getMimetype()
 
 Metadata Audio::getMetadata()
 {
-    if(metadata.loaded()) {
-        if(indexed) {
-            //TODO: Get from db instead of file
-            //meta->fetchData(fileIndex);
+    if(!metadata.loaded()) {
+        if(indexed)
+            metadata.fetchData(fileIndex);
+        else
             metadata.loadData(path);
-        }
-        else {
-            metadata.loadData(path);
-        }
     }
     
     return metadata;
@@ -109,21 +104,13 @@ Metadata Audio::getMetadata()
 
 int Audio::getSize()
 {
-    return -1;
+    if(encoding)
+        return -1;
+    else
+        return -1;
 }
 
-void Audio::saveData(unsigned char *buffer, int count)
-{
-    boost::mutex::scoped_lock lock(mutex);
-    data.insert(data.end(), buffer, buffer + count);
-}
-
-void Audio::encodingFinished()
-{
-    encoding = false;
-}
-
-int Audio::read(int pos, int max, char *buffer)
+int Audio::read(unsigned int pos, unsigned int max, char *buffer)
 {
     while(pos == data.size() && encoding)
         usleep(10000);
@@ -137,3 +124,16 @@ int Audio::read(int pos, int max, char *buffer)
     else 
         return -1;
 }
+
+void Audio::saveData(unsigned char *buffer, int count)
+{
+    boost::mutex::scoped_lock lock(mutex);
+    boost::this_thread::interruption_point();
+    data.insert(data.end(), buffer, buffer + count);
+}
+
+void Audio::encodingFinished()
+{
+    encoding = false;
+}
+

@@ -14,19 +14,19 @@
 
 namespace fs = boost::filesystem;
 
-int Indexer::addFolder(const std::string &directory)
+void Indexer::addFolder(const std::string &directory)
 {
     fs::path dir(directory);
 
     if(!fs::exists(dir)) {
         std::cout << "Path \"" << dir.file_string() << "\" doesn't exist." << std::endl;
-        return 0;
+        return;
     } else if(!fs::is_directory(dir)) {
         std::cout << "Path \"" << dir.file_string() << "\" isn't a directory." << std::endl;
-        return 0;
+        return;
     } else if(fs::is_symlink(dir)) {
         std::cout << "Path \"" << dir.file_string() << "\" is a symlink. Skipping." << std::endl;
-        return 0;
+        return;
     } 
 
     added = removed = updated = 0;
@@ -40,7 +40,7 @@ int Indexer::addFolder(const std::string &directory)
         scanFolder(dir, 0);
     }
     else {
-        updateFolder(dir, path, 0);
+        updateFolder(dir, path);
     }
 
     db.commitTransaction();
@@ -49,7 +49,7 @@ int Indexer::addFolder(const std::string &directory)
     std::cout << "------------\nAdded: " << added << "\nUpdated: " << updated << "\nRemoved: " << removed << "\n" << std::endl;
 }
 
-void Indexer::updateFolder(const fs::path &dir, int pathIndex, int parent)
+void Indexer::updateFolder(const fs::path &dir, int pathIndex)
 {
     std::map<std::string, int> children = db.getPathChildren(pathIndex);
     std::vector<fs::path> files;
@@ -59,7 +59,7 @@ void Indexer::updateFolder(const fs::path &dir, int pathIndex, int parent)
         if(fs::is_directory(*iter)) {
             auto result = children.find(iter->string() + "/");
             if(result != children.end()) {
-                updateFolder(*iter, result->second, pathIndex);
+                updateFolder(*iter, result->second);
                 children.erase(result);
             }
             else {
@@ -105,6 +105,7 @@ void Indexer::updateFiles(int path, const std::vector<fs::path> &files) {
         auto result = dbFiles.find(iter->leaf());
         if(result != dbFiles.end()) {
             if(fs::last_write_time(*iter) > result->second.modified()) {
+                std::cout << result->first << " - " << fs::last_write_time(*iter) << " - " << result->second.modified() << std::endl;
                 result->second.update();
                 ++updated;
             }

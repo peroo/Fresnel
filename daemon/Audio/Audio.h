@@ -6,7 +6,6 @@
 #include "AudioEncoder.h"
 #include "Metadata.h"
 
-#include <tr1/memory>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
@@ -16,28 +15,28 @@
 
 class Audio : public Resource {
     public:
-        Audio() : encoder(NULL), decoder(NULL) {}
+        Audio() : decoder(NULL), encoder(NULL), encoding(false) {}
         ~Audio();
         bool load(int output);
         bool load();
         bool done();
         std::string getMimetype();
         int getSize();
-        int read(int pos, int max, char *buffer);
+        int read(unsigned int pos, unsigned int max, char *buffer);
+        Metadata getMetadata();
         void saveData(unsigned char *buffer, int count);
         void encodingFinished();
-        Metadata getMetadata();
 
     private:
+        std::vector<unsigned char> data;
         Metadata metadata;
         std::string mimetype;
         AudioDecoder *decoder;
         AudioEncoder *encoder;
-        boost::mutex mutex;
         boost::thread decThread;
         boost::thread encThread;
+        boost::mutex mutex;
         bool encoding;
-        std::vector<unsigned char> data;
 };
 
 #endif

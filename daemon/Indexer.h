@@ -12,7 +12,7 @@
 class Indexer {
     public:
         Indexer() {};
-        int addFolder(const std::string &filename);
+        void addFolder(const std::string &filename);
     private:
         Database db;
         int added;
@@ -20,7 +20,7 @@ class Indexer {
         int updated;
 
         void scanFolder(const boost::filesystem::path &folder, int parent);
-        void updateFolder(const boost::filesystem::path &folder, int index, int parent);
+        void updateFolder(const boost::filesystem::path &folder, int index);
         void updateFiles(int index, const std::vector<boost::filesystem::path> &files);
 };
 

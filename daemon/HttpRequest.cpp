@@ -13,8 +13,8 @@ namespace fs = boost::filesystem;
 
 HttpRequest::~HttpRequest()
 {
-    if(!resource || !resource->done())
-        delete resource;
+    //if(!resource || !resource->done())
+        //delete resource;
 }
 
 bool HttpRequest::init()
@@ -42,7 +42,7 @@ void HttpRequest::parseURL()
         end += 1; 
 
     while(pos != end) {
-        int next = url.find_first_of('/', pos + 1);
+        unsigned int next = url.find_first_of('/', pos + 1);
         if(next == std::string::npos)
             next = end;
 
@@ -76,6 +76,7 @@ void HttpRequest::parseURL()
 
 int HttpRequest::headerIterator(void *map, enum MHD_ValueKind kind, const char *key, const char *value)
 {
+    (void) kind;
     static_cast<std::map<std::string, std::string> *> (map)->insert(std::make_pair(key, value));
 
     return MHD_YES;
@@ -95,7 +96,7 @@ void HttpRequest::render(Resource *res)
     MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
     //MHD_add_response_header(response, "Content-Length", itos(res->getSize()));
     MHD_add_response_header(response, "Accept-Ranges", "None");
-    int ret = MHD_queue_response(connection, 200, response);
+    MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
 void HttpRequest::render(JavaScript *script)
@@ -103,7 +104,7 @@ void HttpRequest::render(JavaScript *script)
     std::string result = script->getResult();
     response = MHD_create_response_from_data(result.length(), (void*)result.c_str(), MHD_NO, MHD_YES);
     MHD_add_response_header(response, "content-type", (script->getMimetype() + "; charset=utf-8").c_str());
-    int ret = MHD_queue_response(connection, 200, response);
+    MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
 
@@ -150,7 +151,7 @@ void HttpRequest::render(fs::path path)
     response = MHD_create_response_from_callback(size, 32*1024, file_reader, fp, file_close);
     MHD_add_response_header(response, "content-length", itos(size));
     MHD_add_response_header(response, "content-type", (mimetype + "; charset=utf-8").c_str());
-    int ret = MHD_queue_response(connection, 200, response);
+    MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
 
@@ -159,6 +160,6 @@ void HttpRequest::fail(int status_code)
     std::string text = "<!DOCTYPE><html><head><title>Phail</title></head><body><div>Phail</div></body></html>";
     response = MHD_create_response_from_data(text.length(), (void*)text.c_str(), MHD_NO, MHD_YES);
     MHD_add_response_header(response, "content-type", "text/html; charset=utf-8");
-    int ret = MHD_queue_response(connection, status_code, response);
+    MHD_queue_response(connection, status_code, response);
     MHD_destroy_response(response);
 }

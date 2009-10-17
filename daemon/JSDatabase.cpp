@@ -36,7 +36,7 @@ JSDatabase* JSDatabase::UnwrapDb(const AccessorInfo& info)
     return static_cast<JSDatabase*>(ptr);
 }
 
-Handle<Value> JSDatabase::ReadRow(int index)
+Handle<Value> JSDatabase::ReadRow(unsigned int index)
 {
     HandleScope handle_scope;
 

@@ -16,7 +16,7 @@ class JSDatabase : SQLite {
         static v8::Handle<v8::Value> GetInsertId(v8::Local<v8::String> str, const v8::AccessorInfo& info);
 
         v8::Handle<v8::Value> Execute(const v8::Arguments& arg);
-        v8::Handle<v8::Value> ReadRow(int index);
+        v8::Handle<v8::Value> ReadRow(unsigned int index);
 	private:
         bool done;
         std::map<std::string, int> columns;

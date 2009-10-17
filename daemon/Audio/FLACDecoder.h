@@ -16,7 +16,6 @@ class FLACDecoder: public AudioDecoder, FLAC::Decoder::File {
     private:
         FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame *frame, const FLAC__int32 * const buffer[]);
         void error_callback(FLAC__StreamDecoderErrorStatus status);
-        void metadata_callback(const ::FLAC__StreamMetadata *metadata) {}
 };
 
 #endif

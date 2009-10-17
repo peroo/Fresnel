@@ -41,7 +41,7 @@ bool ResFile::init(int id, int pathIndex, std::string pathName, std::string name
     _pathIndex = pathIndex;
     _pathName = pathName;
     _name = name;
-    _size = _size;
+    _size = size;
     _modified = modified;
     _type = type;
     return true;
@@ -49,7 +49,18 @@ bool ResFile::init(int id, int pathIndex, std::string pathName, std::string name
 
 void ResFile::update()
 {
-    db.updateAudio(this);
+    int id = _id;
+    init(fs::path(_pathName) / _name, _pathIndex);
+    _id = id;
+
+    switch(_type) {
+        case AUDIO:
+            db.updateAudio(this);
+            break;
+        case IMAGE:
+            db.updateImage(this);
+            break;
+    }
 }
 
 void ResFile::insert()
@@ -73,6 +84,7 @@ void ResFile::remove()
 
 bool ResFile::move(int path)
 {
+    return false;
 }
 
 std::time_t ResFile::modified()

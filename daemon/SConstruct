@@ -4,7 +4,7 @@ env = Environment()
 #env['LINKERFORPROGRAMS'] = 'icpc'
 
 if ARGUMENTS.get('debug', 0):
-    env['CCFLAGS'] = '-g -D_FILE_OFFSET_BITS=64 -std=c++0x'
+    env['CCFLAGS'] = '-Wall -Wextra -g -D_FILE_OFFSET_BITS=64 -std=c++0x'
 elif ARGUMENTS.get('optimize', 0):
 #    env['CCFLAGS'] = '-fast'
 #    env['CCFLAGS'] = '-O9'

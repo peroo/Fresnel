@@ -1,4 +1,5 @@
 #include "Metadata.h"
+#include "../Database.h"
 
 #include <boost/filesystem/convenience.hpp>
 
@@ -7,7 +8,7 @@ namespace fs = boost::filesystem;
 bool Metadata::loadData(fs::path path)
 {
     std::string ext = fs::extension(path);
-    for(int i = 0; i < ext.size(); ++i) {
+    for(unsigned int i = 0; i < ext.size(); ++i) {
         ext[i] = tolower(ext[i]);
     }
 
@@ -46,7 +47,11 @@ bool Metadata::loaded()
 
 bool Metadata::fetchData(int index)
 {
-    return false;
+    Database db;
+    fs::path path(db.getResourcePath(index));
+    loadData(path);
+
+    return true;
 }
 
 std::map<const char*, std::string> Metadata::getFields()

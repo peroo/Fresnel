@@ -2,11 +2,9 @@
 #include "Audio.h"
 #include "Metadata.h"
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
 #include <iostream>
+#include <algorithm>
 
-#include <tr1/memory>
 #include <map>
 
 VorbisEncoder::~VorbisEncoder()
@@ -22,6 +20,7 @@ bool VorbisEncoder::start()
 {
     eos = false;
     feeding = true;
+    _encoding = true;
 
     vorbis_info_init(&vi);
     if(vorbis_encode_init_vbr(&vi, channels, 44100, quality)) {
@@ -37,10 +36,9 @@ bool VorbisEncoder::start()
     Metadata meta = parent->getMetadata();
     std::map<const char*, std::string> metaArray = meta.getFields();
 
-    for(std::map<const char*, std::string>::iterator it = metaArray.begin(); it != metaArray.end(); ++it) {
+    for(auto it = metaArray.begin(); it != metaArray.end(); ++it) {
         vorbis_comment_add_tag(&vc, it->first, it->second.c_str());
     }
-
 
     srand(time(NULL));
     ogg_stream_init(&os, rand());
@@ -59,13 +57,12 @@ bool VorbisEncoder::start()
             int result = ogg_stream_flush(&os, &og);
             if(result == 0) break;
 
-            boost::this_thread::interruption_point();
             parent->saveData(og.header, og.header_len);
             parent->saveData(og.body, og.body_len);
         }
     }
 
-    int i, j, count, size;
+    int i, count, size;
     int pos = 0;
     int max = 65536;
 
@@ -82,15 +79,12 @@ bool VorbisEncoder::start()
             
         float **buf = vorbis_analysis_buffer(&vd, count);
     
-        mutex.lock();
+        inputMutex.lock();
         for(i = 0; i < channels; ++i) {
-            for(j = 0; j < count; ++j) {
-                //TODO: memcpy instead of iterating
-                buf[i][j] = buffer[i][pos + j];
-            }
+            std::copy(buffer[i].begin() + pos, buffer[i].begin() + pos+count, buf[i]);
         }
+        inputMutex.unlock();
         pos += count;
-        mutex.unlock();
 
         vorbis_analysis_wrote(&vd, count);
 
@@ -105,7 +99,6 @@ bool VorbisEncoder::start()
                     int result = ogg_stream_pageout(&os, &og);
                     if(result==0) break;
 
-                    boost::this_thread::interruption_point();
                     parent->saveData(og.header, og.header_len);
                     parent->saveData(og.body, og.body_len);
     
@@ -115,7 +108,7 @@ bool VorbisEncoder::start()
         }
     }
 
-    boost::this_thread::interruption_point();
+    _encoding = false;
     parent->encodingFinished();
 
     return true;

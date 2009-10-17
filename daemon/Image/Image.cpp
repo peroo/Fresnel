@@ -21,6 +21,8 @@ bool Image::load(int format)
         loaded = true;
     
     open();
+    double ratio = (double)height / 800;
+    resize(width/ratio, height/ratio, BICUBIC);
     if(format == JPEG) {
         encodeJPEG();
     }
@@ -48,7 +50,7 @@ int Image::getSize()
     return output.size();
 }
 
-int Image::read(int pos, int max, char *buffer)
+int Image::read(unsigned int pos, unsigned int max, char *buffer)
 {
     int count = pos + max > output.size() ? output.size() - pos : max;
     memcpy(buffer, &output[pos], count);
@@ -78,7 +80,6 @@ bool Image::decodePNG(std::string filename) {
     char header[8];
     png_structp png_ptr;
     png_infop info_ptr;
-    png_bytep *row_pointers;
 
     FILE *fp = fopen(filename.c_str(), "rb");
     if(!fp) {
@@ -158,7 +159,6 @@ bool Image::decodeJPEG(std::string filename)
   /* More stuff */
   FILE * infile;        /* source file */
   JSAMPARRAY buffer;        /* Output row buffer */
-  int row_stride;       /* physical row width in output buffer */
 
   /* In this example we want to open the input file before doing anything else,
    * so that the setjmp() error recovery below can assume the file is open.
@@ -329,7 +329,7 @@ void Image::encodeJPEG()
     cinfo.in_color_space = JCS_RGB;
 
     jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, 70, FALSE);
+    jpeg_set_quality(&cinfo, 60, FALSE);
 
     jpeg_start_compress(&cinfo, TRUE);
 
@@ -399,7 +399,6 @@ void Image::bicubic(int sx, int sy, double xfrac, double yfrac, pixel *point, in
 {
     int row1,row2,row3,row4,
         col1,col2,col3,col4;
-    double p1,p2,p3,p4;
 
     if(sy <= 1) {
         row1 = row2 = 0;

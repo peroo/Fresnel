@@ -44,7 +44,7 @@ void SQLite::query(std::string query)
 
 void SQLite::bindInt(int value)
 {
-    int result = sqlite3_bind_int(statement, ++paramIndex, value);
+    sqlite3_bind_int(statement, ++paramIndex, value);
 }
 void SQLite::bindString(std::string value)
 {
@@ -101,12 +101,12 @@ int SQLite::rows_affected()
 
 int SQLite::ColCount()
 {
-    sqlite3_column_count(statement);
+    return sqlite3_column_count(statement);
 }
 
 int SQLite::ColType(int index)
 {
-    sqlite3_column_type(statement, index);
+    return sqlite3_column_type(statement, index);
 }
 
 std::string SQLite::ColName(int index)

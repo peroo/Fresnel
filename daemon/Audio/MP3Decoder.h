@@ -10,7 +10,7 @@ class AudioEncoder;
 
 class MP3Decoder: public AudioDecoder {
     public:
-        explicit MP3Decoder(boost::filesystem::path path) : mh(NULL), buffer(NULL), AudioDecoder(path) {}
+        explicit MP3Decoder(boost::filesystem::path path) : AudioDecoder(path), mh(NULL), buffer(NULL){}
         ~MP3Decoder(); 
         bool start();
     private:

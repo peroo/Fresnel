@@ -122,7 +122,7 @@ bool Image::decodePNG(std::string filename) {
             bitmap[width * y + x] = (pixel){row[offset], row[offset + 1], row[offset + 2]};
         }
     }
-    delete row;
+    delete[] row;
 
     fclose(fp);
 
@@ -511,7 +511,7 @@ std::string Image::scanBarcode()
             barcode = temp;
     }
 
-    delete data;
+    delete[] data;
 
     return barcode;
 }

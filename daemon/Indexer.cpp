@@ -74,6 +74,7 @@ void Indexer::updateFolder(const fs::path &dir, int pathIndex)
     updateFiles(pathIndex, files);
 
     for(auto iter = children.begin(); iter != children.end(); ++iter) {
+        removed += db.dirFileCount(iter->first);
         db.removeDir(iter->second);
     }
 }

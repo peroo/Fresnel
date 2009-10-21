@@ -156,9 +156,9 @@ int main(int argc, char *argv[])
 
     Indexer index = Indexer();
     index.addFolder("/home/peroo/raid/flac_inc/");
-    /*index.addFolder("/home/peroo/raid/inc/unsorted_music/");
+    index.addFolder("/home/peroo/raid/inc/unsorted_music/");
     index.addFolder("/home/peroo/raid/inc/Flac/");
-    index.addFolder("/home/peroo/raid/inc/incoming/");*/
+    index.addFolder("/home/peroo/raid/inc/incoming/");
 
     while(1) {
         sleep(600);

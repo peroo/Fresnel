@@ -21,6 +21,7 @@ class Database : SQLite {
         int getPath(int id);
         int getPath(std::string path);
         bool getFile(ResFile *file);
+        int dirFileCount(std::string path);
 
         int insertAudio(ResFile *file);
         void updateAudio(ResFile *file);

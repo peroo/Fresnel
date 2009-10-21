@@ -236,6 +236,15 @@ int Database::getPath(std::string path)
         return -1;
 }
 
+int Database::dirFileCount(std::string path)
+{
+    query("SELECT COUNT(*) FROM resource NATURAL JOIN path WHERE path LIKE ?");
+
+    bindString(path + "%");
+    step();
+    return getInt();
+}
+
 std::map<std::string, int> Database::getPathChildren(int index)
 {
     query("SELECT path, path_id FROM path WHERE parent=?");

@@ -24,7 +24,7 @@ else if(search == 'album') {
     "JOIN artist I ON T.artist=I.id " +
     "WHERE type=0 " +
     "AND A.title LIKE '%" + obj + "%' " +
-    "ORDER BY A.title, tracknumber ASC";
+    "ORDER BY A.title, R.path_id, tracknumber ASC";
 }
 else if(search == 'random') {
     var count = parseInt(obj) || 10;

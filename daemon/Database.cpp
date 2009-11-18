@@ -50,12 +50,21 @@ int Database::getArtistId(std::string name, std::string sortname)
     if(id)
         return id;
 
-    query("SELECT id FROM artist \
+    query("SELECT id, sortname FROM artist \
             WHERE name LIKE ?");
     bindString(name);
 
     if(step()) {
         id = getInt();
+        std::string sort = getString();
+        // Update artist if the first occurrence didn't contain a sortname
+        if(sort.empty() && !sortname.empty()) {
+            query("UPDATE artist SET sortname=? WHERE id=?");
+            bindString(sortname);
+            bindInt(id);
+            step();
+            artistCache[name] = id;
+        }
     }
     else {
         query("INSERT INTO artist (name, sortname) VALUES (?, ?)");
@@ -63,9 +72,10 @@ int Database::getArtistId(std::string name, std::string sortname)
         bindString(sortname);
         step();
         id = last_insert_id();
+        if(!sortname.empty())
+            artistCache[name] = id;
     }
 
-    artistCache[name] = id;
     return id;
 }
 

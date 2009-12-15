@@ -43,10 +43,10 @@ class Image : public Resource {
 
         void encodeJPEG();
 
-        inline double weighted_sum(const double dx, const double dy, const int p0, const int p1, const int p2, const int p3);
-        inline double cubic_spline_fit(double dx, double pt0, double pt1, double pt2, double pt3);
-        void bilinear(int sx, int sy, double xfrac, double yfrac, pixel *point);
-        void bicubic(int sx, int sy, double xfrac, double yfrac, pixel *point, int newWidth, int newHeight);
+        inline int weighted_sum(const float dx, const float dy, const int p0, const int p1, const int p2, const int p3);
+        inline float cubic_spline_fit(float dx, int pt0, int pt1, int pt2, int pt3);
+        void bilinear(const int sx, const int sy, const float xfrac, const float yfrac, pixel *point);
+        void bicubic(int sx, int sy, float xfrac, float yfrac, pixel *point, int newWidth, int newHeight);
         unsigned char clamp(double num);
 };
 

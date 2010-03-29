@@ -70,7 +70,11 @@ bool VorbisEncoder::start()
     //      0b buffer causes the encoder to fall on its face.
     while(buffer.front().size() == 0) {
         std::cout << "Sleeping..." << std::endl;
+#ifdef _WIN32
+        Sleep(10);
+#else
         usleep(10000);
+#endif
     }
 
     while(feeding || (buffer.front().size() - pos) > 0) {

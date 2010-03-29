@@ -8,13 +8,13 @@
 #include "Image/Image.h"
 #include "Indexer.h"
 
+#include <boost/cstdint.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <sqlite3.h>
 #include <microhttpd.h>
 
 #include <cstdio>
-#include <stdint.h>
 #include <unistd.h>
 #include <iostream>
 #include <fstream>

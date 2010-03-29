@@ -2,9 +2,9 @@
 #define REQUEST_H
 
 #include <sys/socket.h>
-#include <stdint.h>
 #include <stdarg.h>
 #include <microhttpd.h>
+#include <boost/cstdint.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <string>

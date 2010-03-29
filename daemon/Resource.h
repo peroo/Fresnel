@@ -1,6 +1,10 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
+#ifdef _WIN32
+#include <stdint.h>
+#endif
+
 #include <boost/filesystem/path.hpp>
 #include <string>
 #include <vector>

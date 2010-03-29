@@ -113,7 +113,11 @@ int Audio::getSize()
 int Audio::read(unsigned int pos, unsigned int max, char *buffer)
 {
     while(pos == data.size() && encoding)
+#ifdef _WIN32
+        Sleep(10);
+#else
         usleep(10000);
+#endif
 
     boost::mutex::scoped_lock lock(mutex);
     int count = pos + max > data.size() ? data.size() - pos : max;

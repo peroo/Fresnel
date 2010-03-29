@@ -8,12 +8,12 @@
 
 namespace fs = boost::filesystem;
 
-bool ResFile::init(int index)
+ResFile::ResFile(const fs::path &path, int pathIndex)
 {
-    _id = index;
-    return db.getFile(this);
+    init(path, pathIndex);
 }
-bool ResFile::init(const fs::path &path, int pathIndex)
+
+void ResFile::init(const fs::path &path, int pathIndex)
 {
     _id = -1;
     _pathIndex = pathIndex;
@@ -24,27 +24,11 @@ bool ResFile::init(const fs::path &path, int pathIndex)
 
     std::string ext = fs::extension(path);
     if(ext == ".flac" || ext == ".ogg" /*|| ext == ".mp3"*/) {
-        _type = 0;
+        _type = AUDIO;
     }
     else if(ext == ".jpeg" || ext == ".jpg" || ext == ".png") {
-        _type = 1;
+        _type = IMAGE;
     }
-    else {
-        return false;
-    }
-
-    return true;
-}
-bool ResFile::init(int id, int pathIndex, std::string pathName, std::string name, int size, std::time_t modified, int type)
-{
-    _id = id;
-    _pathIndex = pathIndex;
-    _pathName = pathName;
-    _name = name;
-    _size = size;
-    _modified = modified;
-    _type = type;
-    return true;
 }
 
 void ResFile::update()

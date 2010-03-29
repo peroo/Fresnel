@@ -15,6 +15,9 @@
 
 namespace fs = boost::filesystem;
 
+std::map<std::string, int> Database::artistCache;
+std::map<std::string, int> Database::albumCache;
+
 void Database::startTransaction()
 {
     query("BEGIN");
@@ -177,14 +180,13 @@ void Database::updateImage(ResFile *file)
     return;
 }
 
-int Database::insertDir(const fs::path &path, int parent, int type)
+int Database::insertDir(const fs::path &path, int parent)
 {
     query("INSERT INTO path (path, parent) VALUES (?, ?)");
 
     fs::path dir = path.leaf() == "." ? path : path / "/";
     bindString(dir.string());
     bindInt(parent);
-    bindInt(type);
 
     step();
 
@@ -280,7 +282,6 @@ std::map<std::string, ResFile> Database::getFiles(int pathId)
     bindInt(pathId);
 
     while(step()) {
-        ResFile file = ResFile();
         int id = getInt();
         std::string path = getString();
         std::string filename = getString();
@@ -288,30 +289,31 @@ std::map<std::string, ResFile> Database::getFiles(int pathId)
         std::time_t modified(getInt());
         int type = getInt();
 
-        file.init(id, pathId, path, filename, size, modified, type);
+        ResFile file(id, pathId, path, filename, size, modified, type);
         files[filename] = file;
     }
 
     return files;
 }
 
-bool Database::getFile(ResFile *file)
+ResFile Database::getFile(int id)
 {
-    query("SELECT id, path, path.path_id, filename, size, modified, type FROM resource JOIN path USING path_id WHERE id=?");
-    bindInt(file->id());
+    query("SELECT path, path.path_id, filename, size, modified, type FROM resource JOIN path USING path_id WHERE id=?");
+    bindInt(id);
 
-    while(step()) {
-        int id = getInt();
-        std::string path = getString();
-        int pathId = getInt();
-        std::string filename = getString();
-        int size = getInt();
-        std::time_t modified(getInt());
-        int type = getInt();
-
-        file->init(id, pathId, path, filename, size, modified, type);
+    if(!step()) {
+        throw("DB Error");
     }
-    return true;
+
+    std::string path = getString();
+    int pathId = getInt();
+    std::string filename = getString();
+    int size = getInt();
+    std::time_t modified(getInt());
+    int type = getInt();
+
+    ResFile file(id, pathId, path, filename, size, modified, type);
+    return file;
 }
 
 bool Database::createTables()

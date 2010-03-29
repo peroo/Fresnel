@@ -19,6 +19,9 @@ var viewer = (function()
             else if(a.filename < b.filename) return -1;
             else return 0;
         });
+        var i=0; 
+        while(i < images.length)
+            display(i++);
         display(0);
     }
 

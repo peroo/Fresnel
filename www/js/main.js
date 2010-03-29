@@ -176,7 +176,7 @@ var player = (function()
             // Native <audio> support
             var load = function() {
                 var id = playlist.getNext().id;
-                audio.src = 'http://129.241.122.50:9999/resource/' + id + '/asd.ogg';
+                audio.src = 'http://129.241.122.50:9996/resource/' + id + '/asd.ogg';
                 util.log("src: " + audio.src);
                 audio.load();
                 util.log("Changed src to: " + audio.src);
@@ -192,7 +192,7 @@ var player = (function()
 
             var asd = function() {
                 var id = playlist.getNext().id;
-                audio.src = 'http://129.241.122.50:9999/resource/' + id + '/asd.ogg';
+                audio.src = 'http://129.241.122.50:9996/resource/' + id + '/asd.ogg';
                 setTimeout(function(){
                     audio.load(); 
                 }, 500);
@@ -239,7 +239,7 @@ var player = (function()
             // Java fallback
             var load = function() {
                 var id = playlist.getNext().id;
-                applet.setParam('url', 'http://129.241.122.50:9999/resource/' + id + '/asd.ogg');
+                applet.setParam('url', 'http://129.241.122.50:9996/resource/' + id + '/asd.ogg');
                 applet.restart();
                 util.log("Changed src to: " + applet.src);
                 fire('trackChanged');

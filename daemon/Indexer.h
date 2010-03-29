@@ -11,8 +11,9 @@
 
 class Indexer {
     public:
-        Indexer() {};
+        Indexer() : added(0), removed(0), updated(0) {};
         void addFolder(const std::string &filename);
+
     private:
         Database db;
         int added;

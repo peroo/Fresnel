@@ -2,13 +2,14 @@
 #include "Audio/Audio.h"
 #include "Database.h"
 #include "ResFile.h"
+#include "Slingshot.h"
 
 #include "inotify-cxx/inotify-cxx.h"
+#include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
 
-#include <iostream>
 #include <vector>
 #include <map>
 
@@ -19,19 +20,16 @@ void Indexer::addFolder(const std::string &directory)
     fs::path dir(directory);
 
     if(!fs::exists(dir)) {
-        std::cout << "Path \"" << dir.file_string() << "\" doesn't exist." << std::endl;
+        Slingshot::Debug(1) << "Path \"" << dir.file_string() << "\" doesn't exist." << std::endl;
         return;
     } else if(!fs::is_directory(dir)) {
-        std::cout << "Path \"" << dir.file_string() << "\" isn't a directory." << std::endl;
+        Slingshot::Debug(1) << "Path \"" << dir.file_string() << "\" isn't a directory." << std::endl;
         return;
     } else if(fs::is_symlink(dir)) {
-        std::cout << "Path \"" << dir.file_string() << "\" is a symlink. Skipping." << std::endl;
+        Slingshot::Debug(1) << "Path \"" << dir.file_string() << "\" is a symlink. Skipping." << std::endl;
         return;
     } 
 
-    added = removed = updated = 0;
-
-    // TODO: Investigate if transactions make a difference
     Database db = Database();
     db.startTransaction();
 
@@ -45,12 +43,16 @@ void Indexer::addFolder(const std::string &directory)
 
     db.commitTransaction();
     
-    std::cout << "Finished scanning \"" << directory << "\"." << std::endl;
-    std::cout << "------------\nAdded: " << added << "\nUpdated: " << updated << "\nRemoved: " << removed << "\n" << std::endl;
+    Slingshot::Debug(3) << "Finished scanning \"" << directory << "\"." << std::endl <<
+                            "------------" << std::endl <<
+                            "Added: " << added << std::endl <<
+                            "Updated: " << updated << std::endl <<
+                            "Removed: " << removed << std::endl;
 }
 
 void Indexer::updateFolder(const fs::path &dir, int pathIndex)
 {
+    Slingshot::Debug(3) << "Updating " << dir.string() << std::endl;
     std::map<std::string, int> children = db.getPathChildren(pathIndex);
     std::vector<fs::path> files;
 
@@ -76,26 +78,30 @@ void Indexer::updateFolder(const fs::path &dir, int pathIndex)
     for(auto iter = children.begin(); iter != children.end(); ++iter) {
         removed += db.dirFileCount(iter->first);
         db.removeDir(iter->second);
+        Slingshot::Debug(3) << "Removing " << iter->first << std::endl;
     }
 }
 
-// TODO: Investigate whether deferring file insertion until after dir traversal might pay off
 void Indexer::scanFolder(const fs::path &dir, int parent)
 {
-    int pathIndex = db.insertDir(dir, parent, NULL);
+    Slingshot::Debug(3) << "Adding " << dir.string() << std::endl;
+    int pathIndex = db.insertDir(dir, parent);
+    std::vector<fs::path> files;
 
     fs::directory_iterator endIter;
     for(fs::directory_iterator iter(dir); iter!= endIter; ++iter) {
-        if(fs::is_directory(*iter)) {
+        if(fs::is_directory(iter->status())) {
             scanFolder(*iter, pathIndex);
         }
         else {
-            ResFile file;
-            if(file.init(*iter, pathIndex)) {
-                file.insert();
-                ++added;
-            }
+            files.push_back(*iter);
         }
+    }
+
+    for(auto iter = files.begin(); iter != files.end(); ++iter) {
+        ResFile file(*iter, pathIndex);
+        file.insert();
+        ++added;
     }
 }
 
@@ -106,18 +112,16 @@ void Indexer::updateFiles(int path, const std::vector<fs::path> &files) {
         auto result = dbFiles.find(iter->leaf());
         if(result != dbFiles.end()) {
             if(fs::last_write_time(*iter) > result->second.modified()) {
-                std::cout << result->first << " - " << fs::last_write_time(*iter) << " - " << result->second.modified() << std::endl;
                 result->second.update();
                 ++updated;
             }
             dbFiles.erase(result);
         }
         else {
-            ResFile file = ResFile();
-            if(file.init(*iter, path)) {
-                file.insert();
-                ++added;
-            }
+            // TODO: catch exceptions
+            ResFile file = ResFile(*iter, path);
+            file.insert();
+            ++added;
         }
     }
 

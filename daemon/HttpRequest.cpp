@@ -103,7 +103,7 @@ void HttpRequest::render(JavaScript *script)
 {
     std::string result = script->getResult();
     response = MHD_create_response_from_data(result.length(), (void*)result.c_str(), MHD_NO, MHD_YES);
-    MHD_add_response_header(response, "content-type", (script->getMimetype() + "; charset=utf-8").c_str());
+    MHD_add_response_header(response, "content-type", (script->getMimetype() + "; charset=utf-8;").c_str());
     MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }

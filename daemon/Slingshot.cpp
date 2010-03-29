@@ -17,9 +17,9 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
 
 namespace fs = boost::filesystem;
-
 
 int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **ptr)
 {
@@ -94,7 +94,7 @@ void connectionClosed(void *cls, struct MHD_Connection *connection, void **con_c
     delete (HttpRequest*)*con_cls;
 }
 
-bool Slingshot::init(bool test) {
+bool Slingshot::init() {
 	// Setup working dir
     base = fs::path(getenv("HOME")) / ".slingshot";
 	if(!fs::exists(base)) {
@@ -103,12 +103,9 @@ bool Slingshot::init(bool test) {
 			return false;
 	}
 	chdir(Slingshot::base.directory_string().c_str());
-
-    std::string dbname = test ? "test.sqlite" : "db.sqlite"; 
-    std::cout << dbname << std::endl;
-
+    
 	// Init SQLite
-    if(!SQLite::selectDB(dbname.c_str())) {
+    if(!SQLite::selectDB("db.sqlite")) {
         std::cout << "SQL initialization failed." << std::endl;
         return false;
 	}
@@ -142,11 +139,11 @@ void Slingshot::StopServer()
 
 int main(int argc, char *argv[])
 {
+    (void) argc;
     (void) argv;
 
-    bool test = argc > 1 ? true : false;
     Slingshot slingshot = Slingshot();
-    slingshot.init(test);
+    slingshot.init();
     
     /*Image test = Image();
     test.open("002.jpg");
@@ -154,11 +151,12 @@ int main(int argc, char *argv[])
     test.resize(850, 442, BICUBIC);
     test.write("test.jpg", JPEG);*/
 
+
     Indexer index = Indexer();
-    index.addFolder("/home/peroo/raid/flac_inc/");
-    index.addFolder("/home/peroo/raid/inc/unsorted_music/");
+    //index.addFolder("/home/peroo/raid/flac_inc/");
+    //index.addFolder("/home/peroo/raid/inc/unsorted_music/");
     index.addFolder("/home/peroo/raid/inc/Flac/");
-    index.addFolder("/home/peroo/raid/inc/incoming/");
+    //index.addFolder("/home/peroo/raid/inc/incoming/");
 
     while(1) {
         sleep(600);
@@ -167,4 +165,10 @@ int main(int argc, char *argv[])
     slingshot.StopServer();
 
     return 0;
+}
+
+std::ostream& Slingshot::Debug(int level)
+{
+    std::clog.clear(level <= 5 ? std::ios_base::goodbit : std::ios_base::badbit);
+    return std::clog;
 }

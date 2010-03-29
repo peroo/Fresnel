@@ -15,13 +15,13 @@ class Database : SQLite {
         ~Database() {};
 
         bool createTables();
-        int insertDir(const boost::filesystem::path &path, int parent, int type);
+        int insertDir(const boost::filesystem::path &path, int parent);
         bool removeDir(int id);
         int getResourceType(int id);
         int getPath(int id);
         int getPath(std::string path);
-        bool getFile(ResFile *file);
         int dirFileCount(std::string path);
+        ResFile getFile(int id);
 
         int insertAudio(ResFile *file);
         void updateAudio(ResFile *file);
@@ -42,8 +42,8 @@ class Database : SQLite {
         int getArtistId(std::string artist, std::string sortname);
         int getAlbumId(std::string title, std::string date, int artist);
 
-        std::map<std::string, int> artistCache;
-        std::map<std::string, int> albumCache;
+        static std::map<std::string, int> artistCache;
+        static std::map<std::string, int> albumCache;
 };
 
 #endif

@@ -7,11 +7,12 @@
 
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 namespace fs = boost::filesystem;
 
 HttpRequest::HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method)
-    : connection(_connection), url(_url), method(_method), module(INDEX)
+    : url(_url), method(_method), module(INDEX), connection(_connection)
 {
     MHD_get_connection_values(_connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
 
@@ -90,7 +91,7 @@ void HttpRequest::render(std::string text, std::string mimetype)
 {
     response = MHD_create_response_from_data(text.length(), (void*)text.c_str(), MHD_NO, MHD_YES);
     MHD_add_response_header(response, "Content-Type", (mimetype + "; charset=utf-8;").c_str());
-    MHD_add_response_header(response, "Content-Length", strlen(text.c_str()));
+    MHD_add_response_header(response, "Content-Length", itos(strlen(text.c_str())));
     MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }

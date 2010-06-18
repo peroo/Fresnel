@@ -85,20 +85,12 @@ void HttpRequest::render(Resource *res)
     MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
-/*
-void HttpRequest::render(JavaScript *script)
-{
-    std::string result = script->getResult();
-    response = MHD_create_response_from_data(result.length(), (void*)result.c_str(), MHD_NO, MHD_YES);
-    MHD_add_response_header(response, "content-type", (+ "; charset=utf-8;").c_str());
-    MHD_queue_response(connection, 200, response);
-    MHD_destroy_response(response);
-}*/
 
 void HttpRequest::render(std::string text, std::string mimetype)
 {
     response = MHD_create_response_from_data(text.length(), (void*)text.c_str(), MHD_NO, MHD_YES);
-    MHD_add_response_header(response, "content-type", (mimetype + "; charset=utf-8;").c_str());
+    MHD_add_response_header(response, "Content-Type", (mimetype + "; charset=utf-8;").c_str());
+    MHD_add_response_header(response, "Content-Length", strlen(text.c_str()));
     MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }

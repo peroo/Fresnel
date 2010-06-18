@@ -1,9 +1,8 @@
 #include "Slingshot.h"
 #include "SQLite.h"
 #include "Database.h"
-#include "JSDatabase.h"
-#include "JavaScript.h"
 #include "HttpRequest.h"
+#include "DBQuery.h"
 #include "Audio/Audio.h"
 #include "Image/Image.h"
 #include "Indexer.h"
@@ -18,6 +17,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+
+#include "video.h"
 
 namespace fs = boost::filesystem;
 
@@ -37,28 +38,33 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     }
 
     HttpRequest *req = new HttpRequest(connection, url, method);
-    req->init();
-
-    Database db = Database();
 
     if(req->module == RESOURCE) {
+        Database db = Database();
         Resource *res;
-        int type = db.getResourceType(atoi(req->object.c_str()));
-        if(type == AUDIO) {
-            res = new Audio();
-        }
-        else if(type == IMAGE) {
-            res = new Image();
-        }
 
-        res = res->init(atoi(req->object.c_str()));
-        res->load();
-        req->render(res);
+        int id = atoi(req->object.c_str());
+        int type = db.getResourceType(id);
+
+        if(type == -1) {
+            req->fail(MHD_HTTP_NOT_FOUND);
+        }
+        else {
+            if(type == AUDIO) {
+                res = new Audio();
+            }
+            else if(type == IMAGE) {
+                res = new Image();
+            }
+
+            res = res->init(id);
+            res->load();
+            req->render(res);
+        }
     }
     else if(req->module == DATA) {
-        JavaScript script = JavaScript();
-        script.run(req);
-        req->render(&script);
+        DBQuery query = DBQuery(req);
+        query.parse();
     }
     else if(req->module == STATIC_FILE) {
         fs::path path = fs::path("public_html/") / req->object;
@@ -68,8 +74,11 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
         }
         else {
             std::cout << method << ": " << path.string() << " - 404" << std::endl;
-            req->fail(404);
+            req->fail(MHD_HTTP_NOT_FOUND);
         }
+    }
+    else if(req->module == INDEX) {
+        req->render(fs::path("public_html/index.html"));
     }
 
     *ptr = req;
@@ -82,7 +91,7 @@ void connectionClosed(void *cls, struct MHD_Connection *connection, void **con_c
     (void) cls;
     (void) connection;
 
-    std::cout << "Connection closed: ";
+    std::cout << "Connection closed -- ";
     if(toe == MHD_REQUEST_TERMINATED_COMPLETED_OK)
         std::cout << "Completed OK";
     else if(toe == MHD_REQUEST_TERMINATED_WITH_ERROR)
@@ -157,7 +166,8 @@ int main(int argc, char *argv[])
     //index.addFolder("/home/peroo/raid/inc/unsorted_music/");
     index.addFolder("/home/peroo/raid/inc/Flac/");
     //index.addFolder("/home/peroo/raid/inc/incoming/");
-
+    //index.addFolder("/home/peroo/raid/bin/inc");
+    
     while(1) {
         sleep(600);
     }

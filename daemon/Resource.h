@@ -1,7 +1,7 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
-#include <boost/stdint.hpp>
+//#include <boost/stdint.hpp>
 #include <boost/filesystem/path.hpp>
 #include <string>
 #include <vector>

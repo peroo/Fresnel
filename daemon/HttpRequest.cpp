@@ -1,6 +1,5 @@
 #include "HttpRequest.h"
 #include "Resource.h"
-#include "JavaScript.h"
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -11,30 +10,22 @@
 
 namespace fs = boost::filesystem;
 
-HttpRequest::~HttpRequest()
+HttpRequest::HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method)
+    : connection(_connection), url(_url), method(_method), module(INDEX)
 {
-    //if(!resource || !resource->done())
-        //delete resource;
-}
-
-bool HttpRequest::init()
-{
-    MHD_get_connection_values(connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
+    MHD_get_connection_values(_connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
 
     parseURL();
+}
 
-    /*std::cout << "-----------------------------------" << std::endl;
-    std::cout << method << " request for " << module << "/" << object << " with headers:" << std::endl;
-    for(std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-        std::cout << it->first << ": " << it->second << std::endl;
-    }
-    std::cout << "-----------------------------------" << std::endl;*/
 
-    return true;
+HttpRequest::~HttpRequest()
+{
 }
 
 void HttpRequest::parseURL()
 {
+    // TODO lowercase url first
     int index = 0;
     int pos = url.find_first_of('/');
     int end = url.size() - 1;
@@ -68,10 +59,6 @@ void HttpRequest::parseURL()
         ++index;
         pos = next;
     }
-
-    if(module == NULL) {
-        // Fallback
-    }
 }
 
 int HttpRequest::headerIterator(void *map, enum MHD_ValueKind kind, const char *key, const char *value)
@@ -91,7 +78,6 @@ const char* itos(int number)
 
 void HttpRequest::render(Resource *res)
 {
-    resource = res;
     response = MHD_create_response_from_callback(-1, 32*1024, Resource::staticReader, res, NULL);
     MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
     //MHD_add_response_header(response, "Content-Length", itos(res->getSize()));
@@ -99,11 +85,20 @@ void HttpRequest::render(Resource *res)
     MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
+/*
 void HttpRequest::render(JavaScript *script)
 {
     std::string result = script->getResult();
     response = MHD_create_response_from_data(result.length(), (void*)result.c_str(), MHD_NO, MHD_YES);
-    MHD_add_response_header(response, "content-type", (script->getMimetype() + "; charset=utf-8;").c_str());
+    MHD_add_response_header(response, "content-type", (+ "; charset=utf-8;").c_str());
+    MHD_queue_response(connection, 200, response);
+    MHD_destroy_response(response);
+}*/
+
+void HttpRequest::render(std::string text, std::string mimetype)
+{
+    response = MHD_create_response_from_data(text.length(), (void*)text.c_str(), MHD_NO, MHD_YES);
+    MHD_add_response_header(response, "content-type", (mimetype + "; charset=utf-8;").c_str());
     MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }

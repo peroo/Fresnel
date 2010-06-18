@@ -3,6 +3,8 @@ env = Environment()
 #env['CXX'] = '../gfilt'
 #env['LINKERFORPROGRAMS'] = 'icpc'
 
+env.ParseConfig('pkg-config --cflags --libs gstreamer-0.10')
+
 if ARGUMENTS.get('debug', 0):
     env['CCFLAGS'] = '-Wall -Wextra -g -D_FILE_OFFSET_BITS=64 -std=c++0x'
 elif ARGUMENTS.get('optimize', 0):
@@ -16,14 +18,13 @@ elif ARGUMENTS.get('valgrind', 0):
 env.Append( RPATH = '/usr/local/lib/');
 
 env.Program(['Slingshot.cpp', 
-         'JavaScript.cpp', 
          'HttpRequest.cpp', 
          'ResFile.cpp',
          'Indexer.cpp',
          'Resource.cpp',
          'SQLite.cpp',
          'Database.cpp',
-         'JSDatabase.cpp',
+         'DBQuery.cpp',
          'Audio/Audio.cpp',
          'Audio/AudioEncoder.cpp',
          'Audio/AudioDecoder.cpp',
@@ -33,19 +34,27 @@ env.Program(['Slingshot.cpp',
          'Audio/Metadata.cpp',
          'Image/Image.cpp', 
          'inotify-cxx/inotify-cxx.cpp',
+         'video.cpp',
 ], 
-LIBS=['v8_g', 
-      'microhttpd', 
+LIBS=['microhttpd', 
       'sqlite3', 
       'boost_filesystem', 
       'boost_thread-mt',
+      'boost_system',
       'FLAC++', 
+      'FLAC',
+      'ogg',
+      'vorbis',
       'vorbisenc', 
       'mpg123',
       'jpeg', 
       'png',
       'tag',
       'zbar',
+      'gstreamer-0.10',
+      'gstapp-0.10',
+      'gobject-2.0',
+      'glib-2.0',
 #     'profiler',
 #     'tcmalloc'
 ])

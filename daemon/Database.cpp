@@ -33,18 +33,21 @@ int Database::getResourceType(int id)
 {
     query("SELECT type FROM resource WHERE id = ?");
     bindInt(id);
-    step();
+    bool ret = step();
 
-    return getInt();
+    return ret ? getInt() : -1;
 }
 
 std::string Database::getResourcePath(int id)
 {
-    query("SELECT path || filename FROM resource JOIN path USING (path_id) WHERE id = ?");
+    query("SELECT path, filename FROM resource JOIN path USING (path_id) WHERE id = ?");
     bindInt(id);
     step();
 
-    return getString();
+    std::string path = getString();
+    std::string filename = getString();
+
+    return (fs::path(path) / filename).string();
 }
 
 int Database::getArtistId(std::string name, std::string sortname)
@@ -184,8 +187,7 @@ int Database::insertDir(const fs::path &path, int parent)
 {
     query("INSERT INTO path (path, parent) VALUES (?, ?)");
 
-    fs::path dir = path.leaf() == "." ? path : path / "/";
-    bindString(dir.string());
+    bindString(path.string());
     bindInt(parent);
 
     step();
@@ -195,6 +197,7 @@ int Database::insertDir(const fs::path &path, int parent)
 
 bool Database::removeDir(int id)
 {
+    // TODO: Child directories are *not* removed due to possible recursive limitations of sqlite
     query("DELETE FROM path WHERE path_id=?");
     bindInt(id);
     if(step())

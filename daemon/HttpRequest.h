@@ -3,6 +3,7 @@
 
 #include <sys/socket.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <microhttpd.h>
 #include <boost/cstdint.hpp>
 #include <boost/filesystem/path.hpp>
@@ -17,17 +18,17 @@ class JavaScript;
 enum req_module {
     RESOURCE,
     DATA,
-    STATIC_FILE 
+    STATIC_FILE,
+    INDEX
 };
 
 class HttpRequest {
     public:
-        HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method) : url(_url), method(_method), connection(_connection), resource(NULL) {}
+        HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method); 
         ~HttpRequest();
-        bool init();
         void render(Resource *res);
-        void render(JavaScript *script);
         void render(boost::filesystem::path path);
+        void render(std::string text, std::string mimetype);
 
         void fail(int status);
 
@@ -45,7 +46,6 @@ class HttpRequest {
     private:
         MHD_Connection  *connection;
         MHD_Response    *response;
-        Resource        *resource;
 
         void parseURL();
         static int headerIterator(void *, MHD_ValueKind, const char *, const char *);

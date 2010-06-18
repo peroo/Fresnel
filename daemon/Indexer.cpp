@@ -10,7 +10,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
 
-#include <vector>
+#include <list>
 #include <map>
 
 namespace fs = boost::filesystem;
@@ -54,12 +54,12 @@ void Indexer::updateFolder(const fs::path &dir, int pathIndex)
 {
     Slingshot::Debug(3) << "Updating " << dir.string() << std::endl;
     std::map<std::string, int> children = db.getPathChildren(pathIndex);
-    std::vector<fs::path> files;
+    std::list<fs::path> files;
 
     fs::directory_iterator endIter;
     for(fs::directory_iterator iter(dir); iter!= endIter; ++iter) {
         if(fs::is_directory(*iter)) {
-            auto result = children.find(iter->string() + "/");
+            auto result = children.find(iter->string());
             if(result != children.end()) {
                 updateFolder(*iter, result->second);
                 children.erase(result);
@@ -86,7 +86,7 @@ void Indexer::scanFolder(const fs::path &dir, int parent)
 {
     Slingshot::Debug(3) << "Adding " << dir.string() << std::endl;
     int pathIndex = db.insertDir(dir, parent);
-    std::vector<fs::path> files;
+    std::list<fs::path> files;
 
     fs::directory_iterator endIter;
     for(fs::directory_iterator iter(dir); iter!= endIter; ++iter) {
@@ -105,7 +105,7 @@ void Indexer::scanFolder(const fs::path &dir, int parent)
     }
 }
 
-void Indexer::updateFiles(int path, const std::vector<fs::path> &files) {
+void Indexer::updateFiles(int path, const std::list<fs::path> &files) {
     std::map<std::string, ResFile> dbFiles = db.getFiles(path);
 
     for(auto iter = files.begin(); iter != files.end(); ++iter) {

@@ -29,6 +29,9 @@ void ResFile::init(const fs::path &path, int pathIndex)
     else if(ext == ".jpeg" || ext == ".jpg" || ext == ".png") {
         _type = IMAGE;
     }
+    else if(ext == ".avi" || ext == ".mp4" || ext == ".mkv" || ext == ".wmv" || ext == ".mpeg" || ext == ".mpg") {
+        _type = VIDEO;
+    }
 }
 
 void ResFile::update()

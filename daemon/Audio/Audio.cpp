@@ -3,6 +3,7 @@
 #include "FLACDecoder.h"
 #include "MP3Decoder.h"
 #include "VorbisEncoder.h"
+#include <string.h>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>

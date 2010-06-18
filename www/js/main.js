@@ -176,7 +176,7 @@ var player = (function()
             // Native <audio> support
             var load = function() {
                 var id = playlist.getNext().id;
-                audio.src = 'http://129.241.122.50:9996/resource/' + id + '/asd.ogg';
+                audio.src = 'http://129.241.122.110:9996/resource/' + id + '/asd.ogg';
                 util.log("src: " + audio.src);
                 audio.load();
                 util.log("Changed src to: " + audio.src);
@@ -188,20 +188,6 @@ var player = (function()
                 paused = false;
                 audio.play();
                 fire('paused', paused);
-            }
-
-            var asd = function() {
-                var id = playlist.getNext().id;
-                audio.src = 'http://129.241.122.50:9996/resource/' + id + '/asd.ogg';
-                setTimeout(function(){
-                    audio.load(); 
-                }, 500);
-                setTimeout(function(){
-                    audio.play();
-                    fire('trackChanged');
-                    paused = false;
-                    fire('paused', paused);
-                }, 1000);
             }
 
             var pause = function() {
@@ -218,8 +204,9 @@ var player = (function()
 
             audio.addEventListener('ended', function() {
                 util.log('ended');
-                //player.play();
-                asd();
+                setTimeout(function(){
+                    play();
+                }, 1);
             }, false);
 
             var pingTime = function() {
@@ -239,7 +226,7 @@ var player = (function()
             // Java fallback
             var load = function() {
                 var id = playlist.getNext().id;
-                applet.setParam('url', 'http://129.241.122.50:9996/resource/' + id + '/asd.ogg');
+                applet.setParam('url', 'http://129.241.122.110:9996/resource/' + id + '/asd.ogg');
                 applet.restart();
                 util.log("Changed src to: " + applet.src);
                 fire('trackChanged');
@@ -436,7 +423,7 @@ var interface = (function()
     }
     function updateTime(sec) {
         if(sec < 0) {
-            player.play();
+            //player.play();
             return;
         }
         $('.current_time', activeTrack).html(util.formatTime(sec));

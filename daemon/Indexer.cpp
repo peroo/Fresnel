@@ -12,6 +12,7 @@
 
 #include <list>
 #include <map>
+#include <sys/time.h>
 
 namespace fs = boost::filesystem;
 
@@ -30,8 +31,11 @@ void Indexer::addFolder(const std::string &directory)
         return;
     } 
 
-    Database db = Database();
     db.startTransaction();
+
+    struct timeval start, end;
+    long mtime, seconds, useconds;
+    gettimeofday(&start, NULL);
 
     int path = db.getPath(dir.string());
     if(path < 0) {
@@ -42,12 +46,19 @@ void Indexer::addFolder(const std::string &directory)
     }
 
     db.commitTransaction();
+
+    gettimeofday(&end, NULL);
+
+    seconds  = end.tv_sec  - start.tv_sec;
+    useconds = end.tv_usec - start.tv_usec;
+    mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
     
     Slingshot::Debug(3) << "Finished scanning \"" << directory << "\"." << std::endl <<
                             "------------" << std::endl <<
                             "Added: " << added << std::endl <<
                             "Updated: " << updated << std::endl <<
-                            "Removed: " << removed << std::endl;
+                            "Removed: " << removed << std::endl <<
+                            "Time elapsed: " << mtime << "ms." << std::endl;
 }
 
 void Indexer::updateFolder(const fs::path &dir, int pathIndex)
@@ -99,7 +110,7 @@ void Indexer::scanFolder(const fs::path &dir, int parent)
     }
 
     for(auto iter = files.begin(); iter != files.end(); ++iter) {
-        ResFile file(*iter, pathIndex);
+        ResFile file(*iter, pathIndex, &db);
         file.insert();
         ++added;
     }
@@ -119,7 +130,7 @@ void Indexer::updateFiles(int path, const std::list<fs::path> &files) {
         }
         else {
             // TODO: catch exceptions
-            ResFile file = ResFile(*iter, path);
+            ResFile file = ResFile(*iter, path, &db);
             file.insert();
             ++added;
         }

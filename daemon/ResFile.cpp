@@ -1,5 +1,4 @@
 #include "ResFile.h"
-#include "Database.h"
 #include "Resource.h"
 
 #include <boost/filesystem/path.hpp>
@@ -8,7 +7,8 @@
 
 namespace fs = boost::filesystem;
 
-ResFile::ResFile(const fs::path &path, int pathIndex)
+ResFile::ResFile(const fs::path &path, int pathIndex, Database *_db)
+    : db(_db)
 {
     init(path, pathIndex);
 }
@@ -42,10 +42,10 @@ void ResFile::update()
 
     switch(_type) {
         case AUDIO:
-            db.updateAudio(this);
+            db->updateAudio(this);
             break;
         case IMAGE:
-            db.updateImage(this);
+            db->updateImage(this);
             break;
     }
 }
@@ -54,10 +54,10 @@ void ResFile::insert()
 {
     switch(_type) {
         case AUDIO:
-            _id = db.insertAudio(this);
+            _id = db->insertAudio(this);
             break;
         case IMAGE:
-            _id = db.insertImage(this);
+            _id = db->insertImage(this);
             break;
         default:
             _id = -1;
@@ -66,7 +66,7 @@ void ResFile::insert()
 
 void ResFile::remove()
 {
-    db.removeFile(_id);
+    db->removeFile(_id);
 }
 
 bool ResFile::move(int path)

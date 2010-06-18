@@ -11,12 +11,12 @@
 
 class ResFile {
     public:
-        ResFile() {};
-        ResFile(const boost::filesystem::path &path, int pathIndex); 
+        ResFile() {}
+        ResFile(const boost::filesystem::path &path, int pathIndex, Database *_db);
         ResFile(int id, int pathIndex, std::string pathName, 
-                std::string name, int size, std::time_t modified, int type)
+                std::string name, int size, std::time_t modified, int type, Database *_db)
             : _id(id), _type(type), _pathIndex(pathIndex), _size(size), 
-              _pathName(pathName), _name(name), _modified(modified)
+              _pathName(pathName), _name(name), _modified(modified), db(_db)
             {}
         ~ResFile() {};
 
@@ -36,7 +36,7 @@ class ResFile {
         bool move(int path);
         void init(const boost::filesystem::path &path, int pathIndex); 
         
-        Database db;
+        Database *db;
         int _id;
         int _type;
         int _pathIndex;

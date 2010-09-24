@@ -9,8 +9,6 @@
 sqlite3 *SQLite::db;
 
 SQLite::~SQLite() {
-    if(used)
-        sqlite3_finalize(statement);
 }
 
 bool SQLite::selectDB(std::string filename)
@@ -20,14 +18,15 @@ bool SQLite::selectDB(std::string filename)
 
 void SQLite::query(std::string query)
 {
-    if(used)
-        sqlite3_finalize(statement);
-
-    used = true;
+    auto iter = statements.find(query);
+    if(iter != statements.end()) {
+        statement = iter->second;
+        sqlite3_reset(statement);
+        paramIndex = 0;
+        return;
+    }
 
     paramIndex = 0;
-    /*if(statement != NULL)
-        sqlite3_finalize(statement);*/
 
     int result = sqlite3_prepare_v2(
         db,
@@ -40,6 +39,8 @@ void SQLite::query(std::string query)
         std::cout << "Query preparation failed: Error #" << result << std::endl << query.c_str() << std::endl;
         std::cout << sqlite3_errmsg(db) << std::endl;
     }
+
+    statements[query] = statement;
 }
 
 void SQLite::bindInt(int value)

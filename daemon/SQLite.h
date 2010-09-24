@@ -2,6 +2,7 @@
 #define SQLITE_H
 
 #include <string>
+#include <map>
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -28,6 +29,7 @@ class SQLite {
         std::string     ColName(int index);
     private:
         static sqlite3 *db;
+        std::map<std::string, sqlite3_stmt*> statements;
         sqlite3_stmt *statement;
         int paramIndex;
         int colIndex;

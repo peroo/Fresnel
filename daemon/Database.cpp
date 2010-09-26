@@ -20,12 +20,12 @@ std::map<std::string, int> Database::albumCache;
 
 void Database::startTransaction()
 {
-    query("BEGIN");
+    query("BEGIN TRANSACTION");
     step();
 }
 void Database::commitTransaction()
 {
-    query("END");
+    query("COMMIT TRANSACTION");
     step();
 }
 
@@ -78,8 +78,9 @@ int Database::getArtistId(std::string name, std::string sortname)
         bindString(sortname);
         step();
         id = last_insert_id();
-        if(!sortname.empty())
+        if(!sortname.empty()) {
             artistCache[name] = id;
+        }
     }
 
     return id;

@@ -92,10 +92,15 @@ std::string escapeStr(std::string str)
 
 std::string DBQuery::processQuery()
 {
+    // TODO: Bad queries merely return string error instead of 504
     bool res = step();
+    std::cout << "error: " << res << std::endl;
 
     if(res) {
         scanColumns();
+    }
+    else {
+        return "error";
     }
 
     std::ostringstream output;

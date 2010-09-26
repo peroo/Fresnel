@@ -87,13 +87,15 @@ int Database::getArtistId(std::string name, std::string sortname)
 
 int Database::getAlbumId(std::string title, std::string date, int artist)
 {
-    int id = albumCache[title];
+    int id = albumCache[title + date];
     if(id)
         return id;
 
     query("SELECT id FROM audio_album \
-            WHERE title=?");
+            WHERE title=? \
+            AND date=?");
     bindString(title);
+    bindString(date);
 
     if(step()) {
         id = getInt();
@@ -107,7 +109,7 @@ int Database::getAlbumId(std::string title, std::string date, int artist)
         id = last_insert_id();
     }
 
-    albumCache[title] = id;
+    albumCache[title+date] = id;
     return id;
 }
 

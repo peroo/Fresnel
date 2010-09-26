@@ -2,12 +2,12 @@
 #define DATABASE_H
 
 #include "SQLite.h"
+#include "ResFile.h"
 
 #include <boost/filesystem/path.hpp>
 #include <string>
 #include <map>
 
-class ResFile;
 
 class Database : SQLite {
     public:

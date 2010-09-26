@@ -1,28 +1,29 @@
 #ifndef RESFILE_H
 #define RESFILE_H
 
-#include "Database.h"
-
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
 #include <ctime>
 #include <string>
 
+class Database;
+
 class ResFile {
     public:
         ResFile() {}
-        ResFile(const boost::filesystem::path &path, int pathIndex, Database *_db);
+        ResFile(const boost::filesystem::path &path, int pathIndex);
         ResFile(int id, int pathIndex, std::string pathName, 
-                std::string name, int size, std::time_t modified, int type, Database *_db)
+                std::string name, int size, std::time_t modified, int type)
             : _id(id), _type(type), _pathIndex(pathIndex), _size(size), 
-              _pathName(pathName), _name(name), _modified(modified), db(_db)
+              _pathName(pathName), _name(name), _modified(modified)
             {}
         ~ResFile() {};
 
-        void update();
-        void insert();
-        void remove();
+        bool supported();
+        void update(Database* db);
+        void insert(Database* db);
+        void remove(Database* db);
 
         int id();
         int type();
@@ -34,9 +35,8 @@ class ResFile {
 
     private:
         bool move(int path);
-        void init(const boost::filesystem::path &path, int pathIndex); 
+        void init(const boost::filesystem::path &path, int pathIndex);
         
-        Database *db;
         int _id;
         int _type;
         int _pathIndex;

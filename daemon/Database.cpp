@@ -294,7 +294,7 @@ std::map<std::string, ResFile> Database::getFiles(int pathId)
         std::time_t modified(getInt());
         int type = getInt();
 
-        ResFile file(id, pathId, path, filename, size, modified, type, this);
+        ResFile file(id, pathId, path, filename, size, modified, type);
         files[filename] = file;
     }
 
@@ -317,7 +317,7 @@ ResFile Database::getFile(int id)
     std::time_t modified(getInt());
     int type = getInt();
 
-    ResFile file(id, pathId, path, filename, size, modified, type, this);
+    ResFile file(id, pathId, path, filename, size, modified, type);
     return file;
 }
 

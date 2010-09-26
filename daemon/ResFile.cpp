@@ -1,5 +1,6 @@
 #include "ResFile.h"
 #include "Resource.h"
+#include "Database.h"
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -7,21 +8,13 @@
 
 namespace fs = boost::filesystem;
 
-ResFile::ResFile(const fs::path &path, int pathIndex, Database *_db)
-    : db(_db)
+ResFile::ResFile(const fs::path &path, int pathIndex)
 {
     init(path, pathIndex);
 }
 
 void ResFile::init(const fs::path &path, int pathIndex)
 {
-    _id = -1;
-    _pathIndex = pathIndex;
-    _pathName = path.branch_path().string();
-    _name = path.leaf();
-    _size = fs::file_size(path);
-    _modified = fs::last_write_time(path);
-
     std::string ext = fs::extension(path);
     if(ext == ".flac" || ext == ".ogg" /*|| ext == ".mp3"*/) {
         _type = AUDIO;
@@ -32,9 +25,29 @@ void ResFile::init(const fs::path &path, int pathIndex)
     else if(ext == ".avi" || ext == ".mp4" || ext == ".mkv" || ext == ".wmv" || ext == ".mpeg" || ext == ".mpg") {
         _type = VIDEO;
     }
+    else {
+        // Unsupported file, return
+        _type = UNKNOWN;
+        return;
+    }
+
+    _id = -1;
+    _pathIndex = pathIndex;
+    _pathName = path.branch_path().string();
+    _name = path.leaf();
+    _size = fs::file_size(path);
+    _modified = fs::last_write_time(path);
 }
 
-void ResFile::update()
+bool ResFile::supported()
+{
+    if(_type == UNKNOWN)
+        return false;
+    else
+        return true;
+}
+
+void ResFile::update(Database* db)
 {
     int id = _id;
     init(fs::path(_pathName) / _name, _pathIndex);
@@ -50,7 +63,7 @@ void ResFile::update()
     }
 }
 
-void ResFile::insert()
+void ResFile::insert(Database* db)
 {
     switch(_type) {
         case AUDIO:
@@ -64,7 +77,7 @@ void ResFile::insert()
     }
 }
 
-void ResFile::remove()
+void ResFile::remove(Database* db)
 {
     db->removeFile(_id);
 }

@@ -45,6 +45,18 @@ void Indexer::addFolder(const std::string &directory)
         updateFolder(dir, path);
     }
 
+    for(auto iter = updateQueue.begin(); iter != updateQueue.end(); ++iter) {
+        iter->update(&db);
+        ++updated;
+    }
+
+    for(auto iter = addQueue.begin(); iter != addQueue.end(); ++iter) {
+        if(iter->supported()) {
+            iter->insert(&db);
+            ++added;
+        }
+    }
+
     db.commitTransaction();
 
     gettimeofday(&end, NULL);
@@ -63,7 +75,6 @@ void Indexer::addFolder(const std::string &directory)
 
 void Indexer::updateFolder(const fs::path &dir, int pathIndex)
 {
-    Slingshot::Debug(3) << "Updating " << dir.string() << std::endl;
     std::map<std::string, int> children = db.getPathChildren(pathIndex);
     std::list<fs::path> files;
 
@@ -95,9 +106,8 @@ void Indexer::updateFolder(const fs::path &dir, int pathIndex)
 
 void Indexer::scanFolder(const fs::path &dir, int parent)
 {
-    Slingshot::Debug(3) << "Adding " << dir.string() << std::endl;
+    //Slingshot::Debug(3) << "Adding " << dir.string() << std::endl;
     int pathIndex = db.insertDir(dir, parent);
-    std::list<fs::path> files;
 
     fs::directory_iterator endIter;
     for(fs::directory_iterator iter(dir); iter!= endIter; ++iter) {
@@ -105,14 +115,9 @@ void Indexer::scanFolder(const fs::path &dir, int parent)
             scanFolder(*iter, pathIndex);
         }
         else {
-            files.push_back(*iter);
+            ResFile file(*iter, pathIndex);
+            addQueue.push_back(file);
         }
-    }
-
-    for(auto iter = files.begin(); iter != files.end(); ++iter) {
-        ResFile file(*iter, pathIndex, &db);
-        file.insert();
-        ++added;
     }
 }
 
@@ -123,23 +128,20 @@ void Indexer::updateFiles(int path, const std::list<fs::path> &files) {
         auto result = dbFiles.find(iter->leaf());
         if(result != dbFiles.end()) {
             if(fs::last_write_time(*iter) > result->second.modified()) {
-                result->second.update();
-                ++updated;
+                Slingshot::Debug(3) << "Updating " << iter->string() << std::endl;
+                updateQueue.push_back(result->second);
             }
             dbFiles.erase(result);
         }
         else {
-            // TODO: catch exceptions
-            ResFile file = ResFile(*iter, path, &db);
-            file.insert();
-            ++added;
+            ResFile file = ResFile(*iter, path);
+            addQueue.push_back(file);
         }
     }
 
     for(auto iter = dbFiles.begin(); iter != dbFiles.end(); ++iter) {
-        iter->second.remove();
+        iter->second.remove(&db);
         ++removed;
     }
-
 }
 

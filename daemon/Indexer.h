@@ -7,6 +7,7 @@
 #include <boost/filesystem/path.hpp>
 
 #include <string>
+#include <vector>
 #include <list>
 
 class Indexer {
@@ -19,6 +20,9 @@ class Indexer {
         int added;
         int removed;
         int updated;
+
+        std::vector<ResFile> updateQueue;
+        std::vector<ResFile> addQueue;
 
         void scanFolder(const boost::filesystem::path &folder, int parent);
         void updateFolder(const boost::filesystem::path &folder, int index);

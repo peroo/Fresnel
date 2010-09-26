@@ -32,7 +32,6 @@ h1, h2, h3, #album_list {
 }
 #playlist li:hover {
     background-color: black;
-    color: white;
     cursor: pointer;
 }
 #playlist span.time {
@@ -52,26 +51,27 @@ h1, h2, h3, #album_list {
     left: -20px;
 }
 #playlist li.active .progress_bar { display: block; }
-#playlist .current_time { display: none; }
 #playlist li.active .current_time{ display: inline; }
 #playlist li.active .current_time:after { content: " / "; }
+#playlist .current_time { display: none; }
 
 #playlist li div.progress_bar {
-    display: none;
     position: absolute;
+    display: none;
     background-color: black;
-    color: white;
     height: 100%;
     width: 0%;
     margin-left: -10px;
     padding-left: 10px;
-    overflow: hidden;
-    white-space: nowrap;
+    z-index: 1;
 }
-#playlist .progress_bar .text {
-    display: block;
-    width: 100%;
+#playlist div.text { 
+    position: relative;
+    z-index: 2; 
+    color: white;
+    text-shadow: black 1px 1px 1px;
 }
+
 #album_list {
     height: 300px;
     width: 500px;
@@ -90,14 +90,13 @@ h1, h2, h3, #album_list {
 #album_list li.expanded {
     background: black;
     color: white;
-    cursor: default;
 }
 #album_list li li { 
+    cursor: default;
     display: none;
     font-style: italic;
     font-weight:normal;
-    padding: 1px 0;
-    cursor: pointer;
+    margin-left: 1em;
 }
 #album_list li li:hover {
     text-decoration: underline;

@@ -5,7 +5,7 @@ var util = (function()
     }
 
     var formatTime = function(sec) {
-        return Math.floor(sec / 60) + ':' + pad(Math.floor(sec % 60));
+        return Math.floor(sec / 60) + ':' + pad(Math.round(sec % 60));
     }
 
     var log = window.opera ? window.opera.postError : window.console ? window.console.log : function(){};
@@ -74,7 +74,7 @@ var db = (function()
             callback(artwork[path]);
         }
         else {
-            $.getJSON('/data/image/path/' + path, function(json) {
+            $.getJSON('/data/images/' + path, function(json) {
                 artwork[path] = json;
                 callback(artwork[path]);
             });
@@ -116,12 +116,6 @@ var playlist = (function()
         fire();
     }
 
-    function next() {
-        if(playlist[++pointer])
-            return playlist[pointer];
-        else
-            return null;
-    }
 
     function sub(callback) {
         subscribers.push(callback);
@@ -136,12 +130,20 @@ var playlist = (function()
         return playlist;
     }
 
-    function getCurrent() {
+    function next() {
+        return playlist[pointer+1] || null;
+    }
+
+    function current() {
         return playlist[pointer];
     }
 
     function change(id) {
         pointer = id-1;
+    }
+
+    function increment() {
+        pointer++;
     }
 
     function loadAlbum(id) {
@@ -151,9 +153,10 @@ var playlist = (function()
     return {
          add:           add
         ,get:           get
-        ,getCurrent:    getCurrent
-        ,change:        change
+        ,getCurrent:    current
         ,getNext:       next
+        ,change:        change
+        ,increment:     increment
         ,subscribe:     sub
         ,loadAlbum:     loadAlbum
     };
@@ -167,58 +170,75 @@ var player = (function()
     var timer;
     var engine;
     var paused = true;
+    var prefetchTimer;
 
     var init = function() {
         var applet = document.getElementById('java_applet');
-        var audio = document.getElementById('html_player');
+        var currentAudio = document.getElementById('html_player');
+        var prefetchAudio = document.getElementById('html_player2');
 
-        if(!!audio.play) {
+        if(!!currentAudio.play) {
             // Native <audio> support
             var load = function() {
                 var id = playlist.getNext().id;
-                audio.src = 'http://129.241.122.110:9996/resource/' + id + '/asd.ogg';
-                util.log("src: " + audio.src);
-                audio.load();
-                util.log("Changed src to: " + audio.src);
-                fire('trackChanged');
+                prefetchAudio.src = 'http://129.241.122.110:9996/resource/' + id + '/asd.ogg';
+                //util.log("src: " + audio.src);
+                prefetchAudio.load();
+                //util.log("Changed src to: " + audio.src);
             }
 
             var play = function() {
                 load();
+                currentAudio.pause();
+                switchTrack();
+            }
+
+            var switchTrack = function() {
+                playlist.increment();
+                var old = currentAudio;
+                currentAudio = prefetchAudio;
+                prefetchAudio = old;
+
+                currentAudio.play();
                 paused = false;
-                audio.play();
                 fire('paused', paused);
+
+                clearTimeout(prefetchTimer);
+                prefetchTimer = setTimeout(load, 2000);
+                fire('trackChanged');
             }
 
             var pause = function() {
                 if(paused) {
                     paused = false;
-                    audio.play();
+                    currentAudio.play();
                 }
                 else {
                     paused = true;
-                    audio.pause();
+                    currentAudio.pause();
                 }
                 fire('paused', paused);
             }
 
-            audio.addEventListener('ended', function() {
+            currentAudio.addEventListener('ended', function() {
+                switchTrack();
                 util.log('ended');
-                setTimeout(function(){
-                    play();
-                }, 1);
+            }, false);
+            prefetchAudio.addEventListener('ended', function() {
+                switchTrack();
+                util.log('ended');
             }, false);
 
             var pingTime = function() {
-                fire('time', audio.currentTime);
+                fire('time', currentAudio.currentTime);
             }
 
-            audio.addEventListener('timeupdate', pingTime, false);
+            currentAudio.addEventListener('timeupdate', pingTime, false);
+            prefetchAudio.addEventListener('timeupdate', pingTime, false);
 
             player = {
                  play: play
                 ,pause: pause
-                ,load: load
                 ,sub: subscribe
             }
         }
@@ -261,7 +281,6 @@ var player = (function()
             player = {
                  play: play
                 ,pause: pause
-                ,load: load
                 ,sub: subscribe
             }
         }
@@ -400,7 +419,7 @@ var interface = (function()
         for(var i=0,track; track  = list[i]; ++i) {
             var artist = album.name != track.name ? track.name + ' - ' : '';
             var text = _s('%s. %s%s<span class="time"><span class="current_time"></span>%s</span>', util.pad(track.tracknumber), artist, track.title, util.formatTime(track.length));
-            result.push(_s('<li data-id="%s"><div class="progress_bar"><span class="text">%s</span></div>%s</li>', track.pointer, text, text));
+            result.push(_s('<li data-id="%s"><div class="progress_bar"></div><div class="text">%s</div></li>', track.pointer, text));
         }
         
         document.getElementById('album').innerHTML = _s('%s - %s (%s)', album.name, album.title, album.date);
@@ -426,8 +445,9 @@ var interface = (function()
             //player.play();
             return;
         }
+        var width = $(activeTrack).width();
         $('.current_time', activeTrack).html(util.formatTime(sec));
-        $('.progress_bar', activeTrack).css('width', sec*100 / playlist.getCurrent().length + '%');
+        $('.progress_bar', activeTrack).css('width', Math.round(sec) / playlist.getCurrent().length * width + 'px');
     }
     function updateStatus(paused) {
         if(paused)

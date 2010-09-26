@@ -90,7 +90,7 @@ var interface = (function()
 {
     var renderFolder = function(folder) {
         folder = folder || 0;
-        $.getJSON('/data/image/path/' + folder, viewer.init);
+        $.getJSON('/data/images/' + folder, viewer.init);
 
         var folders = db.get(folder) || [];
         folders.sort(function(a,b) {

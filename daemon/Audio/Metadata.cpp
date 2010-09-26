@@ -13,14 +13,13 @@ bool Metadata::loadData(fs::path path)
     }
 
     if(ext == ".flac") {
-        TagLib::FLAC::File *flac = new TagLib::FLAC::File(path.string().c_str(), true);
-        if(!parseXiphComment(flac->xiphComment(false))) {
-            if(!parseId3v2(flac->ID3v2Tag(false))) {
-                parseId3v1(flac->ID3v1Tag(true));
+        TagLib::FLAC::File flac(path.string().c_str(), true);
+        if(!parseXiphComment(flac.xiphComment(false))) {
+            if(!parseId3v2(flac.ID3v2Tag(false))) {
+                parseId3v1(flac.ID3v1Tag(true));
             }
         }
-        parseProperties(flac);
-        delete flac;
+        parseProperties(&flac);
     }
     else if(ext == ".ogg") {
         // TODO: Vorbis is assumed even though it might be FLAC/Speex. May or may not cause fatal problems.

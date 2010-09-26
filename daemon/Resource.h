@@ -9,7 +9,8 @@
 enum res_type {
     AUDIO,
     IMAGE,
-    VIDEO
+    VIDEO,
+    UNKNOWN
 };
 
 class Resource {

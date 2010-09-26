@@ -14,9 +14,26 @@ void DBQuery::parse()
             fetchAlbum(req->parameters[0]);
         }
     }
+    else if(req->object == "images") {
+        fetchImages(req->parameters[0]);
+    }
     else {
         req->fail(MHD_HTTP_NOT_FOUND);
     }
+}
+
+void DBQuery::fetchImages(std::string pathId)
+{
+    int id = atoi(pathId.c_str());
+    query(
+        "SELECT id, filename \
+         FROM resource \
+         WHERE type=1 \
+         AND path_id=?");
+
+    bindInt(id);
+
+    return req->render(processQuery(), "application/json");
 }
 
 void DBQuery::fetchAlbums()

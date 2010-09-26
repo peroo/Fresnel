@@ -17,9 +17,21 @@ void DBQuery::parse()
     else if(req->object == "images") {
         fetchImages(req->parameters[0]);
     }
+    else if(req->object == "path") {
+        fetchPaths();
+    }
     else {
         req->fail(MHD_HTTP_NOT_FOUND);
     }
+}
+
+void DBQuery::fetchPaths()
+{
+    query(
+        "SELECT * \
+        FROM path");
+
+    return req->render(processQuery(), "application/json");
 }
 
 void DBQuery::fetchImages(std::string pathId)

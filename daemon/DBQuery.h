@@ -18,6 +18,7 @@ class DBQuery : SQLite {
 
         std::string processQuery();
         void fetchAlbums();
+        void fetchPaths();
         void fetchAlbum(std::string album);
         void fetchImages(std::string pathId);
         void scanColumns();

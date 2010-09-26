@@ -132,8 +132,8 @@ int Audio::read(unsigned int pos, unsigned int max, char *buffer)
 
 void Audio::saveData(unsigned char *buffer, int count)
 {
-    boost::mutex::scoped_lock lock(mutex);
     boost::this_thread::interruption_point();
+    boost::mutex::scoped_lock lock(mutex);
     data.insert(data.end(), buffer, buffer + count);
 }
 

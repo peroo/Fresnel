@@ -29,9 +29,9 @@ bool Metadata::loadData(fs::path path)
         delete ogg;
     }
     else if(ext == ".mp3") {
-        TagLib::MPEG::File *mp3 = new TagLib::MPEG::File::File(path.string().c_str(), true);
+        TagLib::MPEG::File mp3(path.string().c_str(), true);
         //parseID3(mp3->tag());
-        parseProperties(mp3);
+        parseProperties(&mp3);
     }
 
     _loaded = true;

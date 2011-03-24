@@ -8,8 +8,11 @@ var util = (function()
         return Math.floor(sec / 60) + ':' + pad(Math.round(sec % 60));
     }
 
-    var log = window.opera ? window.opera.postError : window.console ? window.console.log : function(){};
-    log = function(){};
+    //var log = window.opera ? window.opera.postError : window.console ? window.console.log : function(){};
+
+    function log() {
+        return console.log.apply(console, arguments);
+    }
 
     return {
          pad:           pad
@@ -170,41 +173,33 @@ var player = (function()
     var timer;
     var engine;
     var paused = true;
-    var prefetchTimer;
 
     var init = function() {
-        var applet = document.getElementById('java_applet');
         var currentAudio = document.getElementById('html_player');
-        var prefetchAudio = document.getElementById('html_player2');
 
         if(!!currentAudio.play) {
             // Native <audio> support
             var load = function() {
+                currentAudio.pause();
                 var id = playlist.getNext().id;
-                prefetchAudio.src = 'http://129.241.122.110:9996/resource/' + id + '/asd.ogg';
-                //util.log("src: " + audio.src);
-                prefetchAudio.load();
-                //util.log("Changed src to: " + audio.src);
+                currentAudio.src = '/resource/' + id + '/asd.ogg';
+                util.log("src: " + currentAudio.src);
+                currentAudio.load();
             }
 
             var play = function() {
                 load();
-                currentAudio.pause();
                 switchTrack();
             }
 
             var switchTrack = function() {
+                load();
                 playlist.increment();
-                var old = currentAudio;
-                currentAudio = prefetchAudio;
-                prefetchAudio = old;
 
                 currentAudio.play();
                 paused = false;
                 fire('paused', paused);
 
-                clearTimeout(prefetchTimer);
-                prefetchTimer = setTimeout(load, 2000);
                 fire('trackChanged');
             }
 
@@ -220,63 +215,18 @@ var player = (function()
                 fire('paused', paused);
             }
 
-            currentAudio.addEventListener('ended', function() {
+
+            var ended = function() {
                 switchTrack();
                 util.log('ended');
-            }, false);
-            prefetchAudio.addEventListener('ended', function() {
-                switchTrack();
-                util.log('ended');
-            }, false);
+            }
 
             var pingTime = function() {
                 fire('time', currentAudio.currentTime);
             }
 
+            currentAudio.addEventListener('ended', ended, false);
             currentAudio.addEventListener('timeupdate', pingTime, false);
-            prefetchAudio.addEventListener('timeupdate', pingTime, false);
-
-            player = {
-                 play: play
-                ,pause: pause
-                ,sub: subscribe
-            }
-        }
-        else {
-            // Java fallback
-            var load = function() {
-                var id = playlist.getNext().id;
-                applet.setParam('url', 'http://129.241.122.110:9996/resource/' + id + '/asd.ogg');
-                applet.restart();
-                util.log("Changed src to: " + applet.src);
-                fire('trackChanged');
-            }
-
-            var play = function() {
-                clearInterval(timer);
-                load();
-                paused = false;
-                applet.play();
-                timer = setInterval(pingTime, 100);
-            }
-
-            var pause = function() {
-                if(paused) {
-                    paused = false;
-                    applet.play();
-                    timer = setInterval(pingTime, 100);
-                }
-                else {
-                    paused = true;
-                    applet.pause();
-                    clearInterval(timer);
-                }
-                fire('paused', paused);
-            }
-
-            var pingTime = function() {
-                fire('time', applet.currentTime);
-            }
 
             player = {
                  play: play

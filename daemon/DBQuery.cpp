@@ -76,8 +76,9 @@ void DBQuery::fetchImages(std::string pathId)
 
 void DBQuery::fetchAlbums()
 {
+    // TODO: Using REPLACE as hack for proper escaping
     query(
-        "SELECT A.id, title, date, name, sortname \
+        "SELECT A.id, REPLACE(title, '\\', '-') AS title, date, name, sortname \
          FROM audio_album A \
          JOIN artist T ON A.artist=T.id \
          ORDER BY sortname, title, date");

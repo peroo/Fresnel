@@ -112,7 +112,7 @@ bool Slingshot::init() {
 			return false;
 	}
 	chdir(Slingshot::base.directory_string().c_str());
-    
+
 	// Init SQLite
     if(!SQLite::selectDB("db.sqlite")) {
         std::cout << "SQL initialization failed." << std::endl;
@@ -123,11 +123,11 @@ bool Slingshot::init() {
 
 	// Init MHD
 	server = MHD_start_daemon(
-        MHD_USE_DEBUG|MHD_USE_THREAD_PER_CONNECTION, 
-        PORT, 
-        false, 
-        false, 
-        requestCurrier, 
+        MHD_USE_DEBUG|MHD_USE_THREAD_PER_CONNECTION,
+        PORT,
+        false,
+        false,
+        requestCurrier,
         false,
         MHD_OPTION_NOTIFY_COMPLETED,
         connectionClosed,
@@ -153,22 +153,9 @@ int main(int argc, char *argv[])
 
     Slingshot slingshot = Slingshot();
     slingshot.init();
-    
-    /*Image test = Image();
-    test.open("002.jpg");
-    std::cout << "Barcode detected: " << test.scanBarcode() << std::endl;
-    test.resize(850, 442, BICUBIC);
-    test.write("test.jpg", JPEG);*/
-
 
     Indexer index = Indexer();
-    //index.addFolder("/home/peroo/raid/flac_inc/");
-    //index.addFolder("/home/peroo/raid/inc/unsorted_music/");
-    //index.addFolder("/home/peroo/raid/inc/Flac/");
-    //index.addFolder("/home/peroo/raid/inc/incoming/");
-    //index.addFolder("/home/peroo/raid/bin/inc");
-    index.addFolder("/home/peroo/raid/inc/Flac/Fantastic Plastic Machine/");
-    
+
     while(1) {
         sleep(600);
     }

@@ -66,7 +66,7 @@ bool Resource::init(boost::filesystem::path _path)
     return true;
 }
 
-int Resource::staticReader(void *res, uint64_t pos, char *buffer, int max)
+ssize_t Resource::staticReader(void *res, uint64_t pos, char *buffer, size_t max)
 {
     return static_cast<Resource*>(res)->read(pos, (unsigned int)max, buffer);
 }

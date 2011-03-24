@@ -19,7 +19,7 @@ class Resource {
         virtual ~Resource();
         Resource* init(int index);
         bool init(boost::filesystem::path path);
-        int static staticReader(void *res, uint64_t pos, char *buffer, int max);
+        ssize_t static staticReader(void *res, uint64_t pos, char *buffer, size_t max);
 
         virtual bool load(int index) = 0;
         virtual bool load() = 0;

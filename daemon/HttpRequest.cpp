@@ -80,9 +80,9 @@ const char* itos(int number)
 void HttpRequest::render(Resource *res)
 {
     response = MHD_create_response_from_callback(-1, 32*1024, Resource::staticReader, res, NULL);
-    MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
+    //MHD_add_response_header(response, "Content-Type", res->getMimetype().c_str());
     //MHD_add_response_header(response, "Content-Length", itos(res->getSize()));
-    MHD_add_response_header(response, "Accept-Ranges", "None");
+    //MHD_add_response_header(response, "Accept-Ranges", "None");
     MHD_queue_response(connection, 200, response);
     MHD_destroy_response(response);
 }
@@ -96,7 +96,7 @@ void HttpRequest::render(std::string text, std::string mimetype)
     MHD_destroy_response(response);
 }
 
-static int file_reader (void *cls, uint64_t pos, char *buf, int max)
+static ssize_t file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   FILE *file = (FILE *)cls;
 

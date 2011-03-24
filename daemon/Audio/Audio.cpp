@@ -41,7 +41,7 @@ Audio::~Audio()
     if(decoder)
         decThread.interrupt();
 
-    boost::mutex::scoped_lock lock(mutex);
+    boost::mutex::scoped_lock(mutex);
     if(encoder)
         encThread.interrupt();
 }

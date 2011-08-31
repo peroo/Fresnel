@@ -4,7 +4,7 @@
 #include <jpeglib.h>
 #include <jerror.h>
 #include <png.h>
-#include <zbar.h>
+//#include <zbar.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -121,7 +121,12 @@ bool Image::decodePNG(std::string filename) {
         png_read_row(png_ptr, row, NULL);
         for(x=0; x < width; x++) {
             offset = x * 3;
-            bitmap[width * y + x] = (pixel){row[offset], row[offset + 1], row[offset + 2]};
+            pixel temp = {
+                row[offset],
+                row[offset + 1],
+                row[offset + 2]
+            };
+            bitmap[width * y + x] = temp;
         }
     }
     delete[] row;
@@ -236,10 +241,12 @@ bool Image::decodeJPEG(std::string filename)
     (void) jpeg_read_scanlines(&cinfo, buffer, 1);
         for(int x = 0; x < width; x++) {
             int pos = (cinfo.output_scanline-1)*width + x;
-            bitmap[pos] = (pixel) {
-                (*buffer)[x*comp], 
-                (*buffer)[x*comp + stepOne], 
-                (*buffer)[x*comp + stepTwo]};
+            pixel temp = {
+                *buffer[x*comp],
+                *buffer[x*comp + stepOne],
+                *buffer[x*comp + stepTwo]
+            };
+            bitmap[pos] = temp;
         }
     }
   (void) jpeg_finish_decompress(&cinfo);
@@ -491,7 +498,7 @@ unsigned char Image::clamp(double num)
     return num > 255 ? 255 : num < 0 ? 0 : num;
 }
 
-std::string Image::scanBarcode()
+/*std::string Image::scanBarcode()
 {
     std::string barcode = "";
     unsigned char *data = new unsigned char[width*height];
@@ -524,4 +531,4 @@ std::string Image::scanBarcode()
     delete[] data;
 
     return barcode;
-}
+}*/

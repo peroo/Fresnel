@@ -84,6 +84,7 @@ void ResFile::remove(Database* db)
 
 bool ResFile::move(int path)
 {
+    (void) path;
     return false;
 }
 

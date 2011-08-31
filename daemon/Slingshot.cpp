@@ -18,7 +18,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "video.h"
+//#include "video.h"
 
 namespace fs = boost::filesystem;
 
@@ -125,10 +125,10 @@ bool Slingshot::init() {
 	server = MHD_start_daemon(
         MHD_USE_DEBUG|MHD_USE_THREAD_PER_CONNECTION,
         PORT,
-        false,
-        false,
+        NULL,
+        NULL,
         requestCurrier,
-        false,
+        NULL,
         MHD_OPTION_NOTIFY_COMPLETED,
         connectionClosed,
         NULL,

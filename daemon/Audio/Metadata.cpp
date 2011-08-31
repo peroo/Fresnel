@@ -143,10 +143,12 @@ bool Metadata::parseProperties(TagLib::File *file)
 
 bool Metadata::parseId3v2(TagLib::ID3v2::Tag *tag)
 {
+    (void) tag;
     return false;
 }
 
 bool Metadata::parseId3v1(TagLib::ID3v1::Tag *tag)
 {
+    (void) tag;
     return false;
 }

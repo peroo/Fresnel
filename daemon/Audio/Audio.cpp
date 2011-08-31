@@ -4,6 +4,7 @@
 #include "MP3Decoder.h"
 #include "VorbisEncoder.h"
 #include <string.h>
+#include <iostream>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>

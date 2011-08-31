@@ -21,7 +21,7 @@ class AudioEncoder {
 
         const std::string mimetype;
     protected:
-        std::vector<std::vector<float>> buffer;
+        std::vector<std::vector<float> > buffer;
         boost::mutex inputMutex;
         Audio *parent;
         float quality;

@@ -4,14 +4,14 @@
 
 #include <algorithm>
 
-ResFile::ResFile(const struct stat *fileinfo, const std::string &name, 
+ResFile::ResFile(const struct stat &fileinfo, const std::string &name, 
         int32_t path_id, const std::string &path)
         : _name(name), _path_id(path_id), _path(path)
 {
     initInfo(fileinfo);
 }
 
-void ResFile::initInfo(const struct stat *fileinfo)
+void ResFile::initInfo(const struct stat &fileinfo)
 {
     std::string ext = readExtension();
     if(ext == "flac" || ext == "ogg" /*|| ext == ".mp3"*/) {
@@ -31,8 +31,8 @@ void ResFile::initInfo(const struct stat *fileinfo)
     }
 
     _id = -1;
-    _size = fileinfo->st_size;
-    _modified = fileinfo->st_mtime;
+    _size = fileinfo.st_size;
+    _modified = fileinfo.st_mtime;
 }
 
 std::string ResFile::readExtension() {
@@ -55,9 +55,9 @@ bool ResFile::supported()
         return true;
 }
 
-void ResFile::updateInfo(const struct stat *fileinfo) {
-    _size = fileinfo->st_size;
-    _modified = fileinfo->st_mtime;
+void ResFile::updateInfo(const struct stat &fileinfo) {
+    _size = fileinfo.st_size;
+    _modified = fileinfo.st_mtime;
 }
 
 void ResFile::update(Database* db)

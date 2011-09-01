@@ -113,40 +113,40 @@ void Indexer::updateFolder(const Directory &dir)
     struct dirent *entity;
     while((entity = readdir(dirstream)) != NULL) {
         std::string path = dir.path + '/' + entity->d_name;
-        struct stat *filestat = NULL;
-        lstat(path.c_str(), filestat);
+        struct stat filestat;
+        lstat(path.c_str(), &filestat);
 
-        if(S_ISREG(filestat->st_mode)) {
-            if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
-                    entity->d_name[1] != '.') || entity->d_name[2] != '\0') {
-                std::string name(entity->d_name);
+        if(S_ISREG(filestat.st_mode)) {
+            std::string name(entity->d_name);
 
-                auto result = files.find(name);
-                if(result != files.end()) {
-                    if(filestat->st_mtime > result->second.modified()) {
-                        Slingshot::Debug(3) << "Updating " << path << std::endl;
-                        result->second.updateInfo(filestat);
-                        update_queue.push_front(result->second);
-                    }
-                    files.erase(result);
+            auto result = files.find(name);
+            if(result != files.end()) {
+                if(filestat.st_mtime > result->second.modified()) {
+                    Slingshot::Debug(3) << "Updating " << path << std::endl;
+                    result->second.updateInfo(filestat);
+                    update_queue.push_front(result->second);
                 }
-                else {
-                    ResFile file(filestat, name, dir.id, dir.path);
-                    add_queue.push_front(file);
-                }
-            }
-        }
-        else if(S_ISDIR(filestat->st_mode)) {
-            auto result = children.find(path);
-            if(result != children.end()) {
-                Directory olddir = {path, result->second};
-                olddir_queue.push_front(olddir);
-                children.erase(result);
+                files.erase(result);
             }
             else {
-                int32_t id = db.insertDir(path, dir.id);
-                Directory newdir = {path, id};
-                newdir_queue.push_front(newdir);
+                ResFile file(filestat, name, dir.id, dir.path);
+                add_queue.push_front(file);
+            }
+        }
+        else if(S_ISDIR(filestat.st_mode)) {
+            if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
+                    entity->d_name[1] != '.') || entity->d_name[2] != '\0') {
+                auto result = children.find(path);
+                if(result != children.end()) {
+                    Directory olddir = {path, result->second};
+                    olddir_queue.push_front(olddir);
+                    children.erase(result);
+                }
+                else {
+                    int32_t id = db.insertDir(path, dir.id);
+                    Directory newdir = {path, id};
+                    newdir_queue.push_front(newdir);
+                }
             }
         }
     }
@@ -176,21 +176,25 @@ void Indexer::scanFolder(const Directory &dir)
     struct dirent *entity;
     while((entity = readdir(dirstream)) != NULL) {
         std::string path = dir.path + '/' + entity->d_name;
-        struct stat *filestat = NULL;
-        lstat(path.c_str(), filestat);
-
-        if(S_ISREG(filestat->st_mode)) {
-            if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
-                    entity->d_name[1] != '.') || entity->d_name[2] != '\0') {
-
-                ResFile file(filestat, std::string(entity->d_name), dir.id, dir.path);
-                add_queue.push_front(file);
-            }
+        struct stat filestat;
+        int result = lstat(path.c_str(), &filestat);
+        if(result == -1) {
+            int error = errno;
+            Slingshot::Debug(1) << "Error #" << error << " in path: " << path << std::endl;
+            return;
         }
-        else if(S_ISDIR(filestat->st_mode)) {
-            int32_t id = db.insertDir(path, dir.id);
-            Directory newdir = {path, id};
-            newdir_queue.push_front(newdir);
+
+        if(S_ISREG(filestat.st_mode)) {
+            ResFile file(filestat, std::string(entity->d_name), dir.id, dir.path);
+            add_queue.push_front(file);
+        }
+        else if(S_ISDIR(filestat.st_mode)) {
+            if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
+                    (entity->d_name[1] != '.' || entity->d_name[2] != '\0'))) {
+                int32_t id = db.insertDir(path, dir.id);
+                Directory newdir = {path, id};
+                newdir_queue.push_front(newdir);
+            }
         }
     }
 }

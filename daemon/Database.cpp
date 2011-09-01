@@ -3,17 +3,11 @@
 #include "Resource.h"
 #include "Audio/Metadata.h"
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <sqlite3.h>
 
 #include <iostream>
 #include <string>
 #include <map>
-
-//TODO: overload bind() for int/string/whatever
-
-namespace fs = boost::filesystem;
 
 std::map<std::string, int> Database::artistCache;
 std::map<std::string, int> Database::albumCache;
@@ -45,9 +39,9 @@ std::string Database::getResourcePath(int id)
     step();
 
     std::string path = getString();
-    std::string filename = getString();
+    path += '/' + getString();
 
-    return (fs::path(path) / filename).string();
+    return path;
 }
 
 int Database::getArtistId(std::string name, std::string sortname)
@@ -124,7 +118,7 @@ int Database::insertAudio(ResFile *file)
     }
 
     Metadata meta = Metadata();
-    meta.loadData(fs::path(file->pathName() + "/" + file->name()));
+    meta.loadData(file->path() + "/" + file->name());
 
     int artistId = getArtistId(meta.artist, meta.artist_sort);
     int albumId = getAlbumId(meta.album, meta.date, getArtistId(meta.albumartist, meta.albumartist_sort));
@@ -134,7 +128,7 @@ int Database::insertAudio(ResFile *file)
     bindString(meta.title);
     bindInt(artistId);
     bindInt(albumId);
-    bindInt(atoi(meta.tracknumber.c_str()));
+    bindString(meta.tracknumber.c_str());
     bindInt(meta.length);
     bindInt(meta.bitrate);
     bindString(meta.musicbrainz_trackid);
@@ -147,7 +141,7 @@ void Database::updateAudio(ResFile *file)
     updateFile(file);
 
     Metadata meta = Metadata();
-    meta.loadData(fs::path(file->pathName() + file->name()));
+    meta.loadData(file->path() + '/' + file->name());
 
     int artistId = getArtistId(meta.artist, meta.artist_sort);
     int albumId = getAlbumId(meta.album, meta.date, getArtistId(meta.albumartist, meta.albumartist_sort));
@@ -156,7 +150,7 @@ void Database::updateAudio(ResFile *file)
     bindString(meta.title);
     bindInt(artistId);
     bindInt(albumId);
-    bindInt(atoi(meta.tracknumber.c_str()));
+    bindString(meta.tracknumber.c_str());
     bindInt(meta.length);
     bindInt(meta.bitrate);
     bindString(meta.musicbrainz_trackid);
@@ -186,11 +180,11 @@ void Database::updateImage(ResFile *file)
     return;
 }
 
-int Database::insertDir(const fs::path &path, int parent)
+int Database::insertDir(const std::string &path, int parent)
 {
     query("INSERT INTO path (path, parent) VALUES (?, ?)");
 
-    bindString(path.string());
+    bindString(path);
     bindInt(parent);
 
     step();
@@ -217,7 +211,7 @@ int Database::insertFile(ResFile *file)
     bindString(file->name());
     bindInt(file->type());
     bindInt(file->size());
-    bindInt(file->modified());
+    bindInt64(file->modified());
 
     step();
 
@@ -228,7 +222,7 @@ void Database::updateFile(ResFile *file)
 {
     query("UPDATE resource SET size=?, modified=? WHERE id=?");
     bindInt(file->size());
-    bindInt(file->modified());
+    bindInt64(file->modified());
     bindInt(file->id());
 
     step();
@@ -242,7 +236,7 @@ void Database::removeFile(int id)
     return;
 }
 
-int Database::getPath(std::string path)
+int Database::getPathID(const std::string &path)
 {
     query ("SELECT path_id FROM path WHERE path=?");
 
@@ -254,7 +248,7 @@ int Database::getPath(std::string path)
         return -1;
 }
 
-int Database::dirFileCount(std::string path)
+int Database::dirFileCount(const std::string &path)
 {
     query("SELECT COUNT(*) FROM resource NATURAL JOIN path WHERE path LIKE ?");
 
@@ -263,46 +257,42 @@ int Database::dirFileCount(std::string path)
     return getInt();
 }
 
-std::map<std::string, int> Database::getPathChildren(int index)
+std::map<std::string, int> Database::getPathChildren(int32_t id)
 {
     query("SELECT path, path_id FROM path WHERE parent=?");
 
-    bindInt(index);
+    bindInt(id);
 
-    std::map<std::string, int> paths;
+    std::map<std::string, int32_t> paths;
     while(step()) {
-        std::string path = getString();
-        int id = getInt();
-        paths[path] = id;
+        paths[getString()] = getInt();
     }
 
     return paths;
 }
 
 
-std::map<std::string, ResFile> Database::getFiles(int pathId)
+std::map<std::string, ResFile> Database::getFiles(int32_t path_id)
 {
     std::map<std::string, ResFile> files;
 
-    query("SELECT id, path, filename, size, modified FROM resource JOIN path USING (path_id) WHERE path_id=?");
-    bindInt(pathId);
+    query("SELECT id, filename, modified, type, path FROM resource JOIN path USING(path_id) WHERE path_id=?");
+    bindInt(path_id);
 
     while(step()) {
         int id = getInt();
-        std::string path = getString();
         std::string filename = getString();
-        int size = getInt();
-        std::time_t modified(getInt());
-        int type = getInt();
+        time_t modified(getInt64());
+        int type(getInt());
+        std::string path = getString();
 
-        ResFile file(id, pathId, path, filename, size, modified, type);
-        files[filename] = file;
+        files[filename] = ResFile(id, modified, type, path);
     }
 
     return files;
 }
 
-ResFile Database::getFile(int id)
+/*ResFile Database::getFile(int id)
 {
     query("SELECT path, path.path_id, filename, size, modified, type FROM resource JOIN path USING path_id WHERE id=?");
     bindInt(id);
@@ -320,7 +310,7 @@ ResFile Database::getFile(int id)
 
     ResFile file(id, pathId, path, filename, size, modified, type);
     return file;
-}
+}*/
 
 bool Database::createTables()
 {
@@ -353,7 +343,7 @@ bool Database::createTables()
         title TEXT, \
         artist INTEGER, \
         album INTEGER, \
-        tracknumber INTEGER, \
+        tracknumber TEXT, \
         length INTEGER, \
         bitrate INTEGER, \
         mbid_tid TEXT)";

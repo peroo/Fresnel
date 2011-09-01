@@ -2,27 +2,26 @@
 #include "Resource.h"
 #include "Database.h"
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/convenience.hpp>
+#include <algorithm>
 
-namespace fs = boost::filesystem;
-
-ResFile::ResFile(const fs::path &path, int pathIndex)
+ResFile::ResFile(const struct stat *fileinfo, const std::string &name, 
+        int32_t path_id, const std::string &path)
+        : _name(name), _path_id(path_id), _path(path)
 {
-    init(path, pathIndex);
+    initInfo(fileinfo);
 }
 
-void ResFile::init(const fs::path &path, int pathIndex)
+void ResFile::initInfo(const struct stat *fileinfo)
 {
-    std::string ext = fs::extension(path);
-    if(ext == ".flac" || ext == ".ogg" /*|| ext == ".mp3"*/) {
+    std::string ext = readExtension();
+    if(ext == "flac" || ext == "ogg" /*|| ext == ".mp3"*/) {
         _type = AUDIO;
     }
-    else if(ext == ".jpeg" || ext == ".jpg" || ext == ".png") {
+    else if(ext == "jpeg" || ext == "jpg" || ext == "png") {
         _type = IMAGE;
     }
-    else if(ext == ".avi" || ext == ".mp4" || ext == ".mkv" || ext == ".wmv" || ext == ".mpeg" || ext == ".mpg") {
+    else if(ext == "avi" || ext == "mp4" || ext == "mkv" || ext == "wmv" || 
+            ext == "mpeg" || ext == "mpg") {
         _type = VIDEO;
     }
     else {
@@ -32,11 +31,20 @@ void ResFile::init(const fs::path &path, int pathIndex)
     }
 
     _id = -1;
-    _pathIndex = pathIndex;
-    _pathName = path.branch_path().string();
-    _name = path.leaf();
-    _size = fs::file_size(path);
-    _modified = fs::last_write_time(path);
+    _size = fileinfo->st_size;
+    _modified = fileinfo->st_mtime;
+}
+
+std::string ResFile::readExtension() {
+    size_t index = _name.find_last_of('.');
+    if(index != std::string::npos) {
+        std::string ext = _name.substr(index + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        return ext;
+    }
+
+    std::string ext;
+    return ext;
 }
 
 bool ResFile::supported()
@@ -47,12 +55,13 @@ bool ResFile::supported()
         return true;
 }
 
+void ResFile::updateInfo(const struct stat *fileinfo) {
+    _size = fileinfo->st_size;
+    _modified = fileinfo->st_mtime;
+}
+
 void ResFile::update(Database* db)
 {
-    int id = _id;
-    init(fs::path(_pathName) / _name, _pathIndex);
-    _id = id;
-
     switch(_type) {
         case AUDIO:
             db->updateAudio(this);
@@ -88,7 +97,7 @@ bool ResFile::move(int path)
     return false;
 }
 
-std::time_t ResFile::modified()
+time_t ResFile::modified()
 {
     return _modified;
 }
@@ -96,21 +105,21 @@ int ResFile::id()
 {
     return _id;
 }
-int ResFile::pathId()
+int32_t ResFile::pathId()
 {
-    return _pathIndex;
+    return _path_id;
 }
-std::string ResFile::pathName()
-{
-    return _pathName;
-}
-int ResFile::size()
+off_t ResFile::size()
 {
     return _size;
 }
 std::string ResFile::name()
 {
     return _name;
+}
+std::string ResFile::path()
+{
+    return _path;
 }
 int ResFile::type()
 {

@@ -4,7 +4,6 @@
 #include "SQLite.h"
 #include "ResFile.h"
 
-#include <boost/filesystem/path.hpp>
 #include <string>
 #include <map>
 
@@ -15,13 +14,12 @@ class Database : SQLite {
         ~Database() {};
 
         bool createTables();
-        int insertDir(const boost::filesystem::path &path, int parent);
+        int insertDir(const std::string &path, int parent);
         bool removeDir(int id);
         int getResourceType(int id);
-        int getPath(int id);
-        int getPath(std::string path);
-        int dirFileCount(std::string path);
-        ResFile getFile(int id);
+        int getPathID(const std::string &path);
+        int dirFileCount(const std::string &path);
+        //ResFile getFile(int id);
 
         int insertAudio(ResFile *file);
         void updateAudio(ResFile *file);

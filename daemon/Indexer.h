@@ -3,30 +3,35 @@
 
 #include "Database.h"
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-
 #include <string>
 #include <vector>
 #include <list>
+
 
 class Indexer {
     public:
         Indexer() : added(0), removed(0), updated(0) {};
         void addFolder(const std::string &filename);
 
+        struct Directory {
+            std::string path;
+            int32_t id;
+        };
+
     private:
         Database db;
-        int added;
-        int removed;
-        int updated;
+        uint32_t added;
+        uint32_t removed;
+        uint32_t updated;
 
-        std::vector<ResFile> updateQueue;
-        std::vector<ResFile> addQueue;
+        // TODO: Could be turned into forward_list or potential savings
+        std::list<Indexer::Directory> newdir_queue;
+        std::list<Indexer::Directory> olddir_queue;
+        std::list<ResFile> update_queue;
+        std::list<ResFile> add_queue;
 
-        void scanFolder(const boost::filesystem::path &folder, int parent);
-        void updateFolder(const boost::filesystem::path &folder, int index);
-        void updateFiles(int index, const std::list<boost::filesystem::path> &files);
+        void scanFolder(const Indexer::Directory &dir);
+        void updateFolder(const Indexer::Directory &dir);
 };
 
 #endif

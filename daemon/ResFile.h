@@ -1,49 +1,48 @@
 #ifndef RESFILE_H
 #define RESFILE_H
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-
 #include <ctime>
 #include <string>
+#include <dirent.h>
+#include <sys/stat.h>
 
 class Database;
 
 class ResFile {
     public:
         ResFile() {}
-        ResFile(const boost::filesystem::path &path, int pathIndex);
-        ResFile(int id, int pathIndex, std::string pathName, 
-                std::string name, int size, std::time_t modified, int type)
-            : _id(id), _type(type), _pathIndex(pathIndex), _size(size), 
-              _pathName(pathName), _name(name), _modified(modified)
+        ResFile(const struct stat *fileinfo, const std::string &name, int32_t path_id, const std::string &path);
+        ResFile(int32_t id, time_t modified, int type, std::string path)
+            : _id(id), _modified(modified), _type(type), _path(path)
             {}
         ~ResFile() {};
 
         bool supported();
         void update(Database* db);
+        void updateInfo(const struct stat *fileinfo);
         void insert(Database* db);
         void remove(Database* db);
 
-        int id();
+        int32_t id();
         int type();
         int pathId();
-        int size();
+        off_t size();
         std::string name();
-        std::string pathName();
-        std::time_t modified();
+        std::string path();
+        time_t modified();
 
     private:
         bool move(int path);
-        void init(const boost::filesystem::path &path, int pathIndex);
+        void initInfo(const struct stat *fileinfo);
+        std::string readExtension();
         
-        int _id;
-        int _type;
-        int _pathIndex;
-        int _size;
-        std::string _pathName;
+        int32_t _id;
+        off_t _size;
         std::string _name;
-        std::time_t _modified;
+        int32_t _path_id;
+        time_t _modified;
+        int _type;
+        std::string _path;
 };
 
 #endif

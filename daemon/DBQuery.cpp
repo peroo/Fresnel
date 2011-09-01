@@ -247,7 +247,7 @@ std::string DBQuery::processM3U()
         std::string title = getString();
         std::string artist = getString();
         std::string album = getString();
-        int tracknumber = getInt();
+        std::string tracknumber = getString();
         int length = getInt();
 
         output << "#EXTINF:" << length << "," << artist << " - " << title << std::endl;
@@ -274,7 +274,7 @@ std::string DBQuery::processXSPF()
         std::string title = getString();
         std::string artist = getString();
         std::string album = getString();
-        int tracknumber = getInt();
+        std::string tracknumber = getString();
         int length = getInt();
 
         std::stringstream loc;
@@ -284,7 +284,8 @@ std::string DBQuery::processXSPF()
         track.giveAlbum(album.c_str(), true);
         track.giveCreator(artist.c_str(), true);
         track.giveTitle(title.c_str(), true);
-        track.setTrackNum(tracknumber);
+        // TODO: setTrackNum expects integer, while we have string
+        //track.setTrackNum(tracknumber);
         track.setDuration(length * 1000);
         track.giveAppendLocation((std::string("http://129.241.138.184:9996/resource/") + loc.str()).c_str(), true);
         writer->addTrack(track);

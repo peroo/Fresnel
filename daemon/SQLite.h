@@ -19,8 +19,10 @@ class SQLite {
         int             last_insert_id();
         int             rows_affected();
         void            bindInt(int value);
+        void            bindInt64(uint64_t value);
         void            bindString(std::string value);
         int             getInt();
+        uint64_t        getInt64();
         double          getFloat();
         std::string     getString();
         void            getVoid();

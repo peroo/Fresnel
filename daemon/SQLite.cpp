@@ -47,6 +47,10 @@ void SQLite::bindInt(int value)
 {
     sqlite3_bind_int(statement, ++paramIndex, value);
 }
+void SQLite::bindInt64(uint64_t value)
+{
+    sqlite3_bind_int64(statement, ++paramIndex, value);
+}
 void SQLite::bindString(std::string value)
 {
     sqlite3_bind_text(statement, ++paramIndex, value.c_str(), value.size(), SQLITE_TRANSIENT);
@@ -54,6 +58,10 @@ void SQLite::bindString(std::string value)
 int SQLite::getInt()
 {
     return sqlite3_column_int(statement, colIndex++);
+}
+uint64_t SQLite::getInt64()
+{
+    return sqlite3_column_int64(statement, colIndex++);
 }
 double SQLite::getFloat()
 {

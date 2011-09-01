@@ -135,7 +135,7 @@ void Indexer::updateFolder(const Directory &dir)
         }
         else if(S_ISDIR(filestat.st_mode)) {
             if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
-                    entity->d_name[1] != '.') || entity->d_name[2] != '\0') {
+                    (entity->d_name[1] != '.' || entity->d_name[2] != '\0'))) {
                 auto result = children.find(path);
                 if(result != children.end()) {
                     Directory olddir = {path, result->second};

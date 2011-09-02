@@ -7,7 +7,6 @@
 #include <taglib/id3v1tag.h>
 #include <taglib/id3v2tag.h>
 #include <taglib/flacfile.h>
-#include <boost/filesystem/path.hpp>
 
 #include <string>
 #include <map>
@@ -16,7 +15,7 @@ class Metadata {
     public:
         Metadata() : _loaded(false) {}
         ~Metadata() {}
-        bool loadData(boost::filesystem::path path);
+        bool loadData(std::string path);
         bool fetchData(int index);
         std::map<const char*, std::string> getFields();
         bool loaded();

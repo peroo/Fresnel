@@ -21,7 +21,7 @@ bool MP3Decoder::start()
 
     err = mpg123_init();
     if( err != MPG123_OK || (mh = mpg123_new(NULL, &err)) == NULL
-        || mpg123_open(mh, file.string().c_str()) != MPG123_OK
+        || mpg123_open(mh, file.c_str()) != MPG123_OK
         || mpg123_getformat(mh, &rate, &channels, &encoding) != MPG123_OK ) {
         //std::cout << "Trouble with mpg123:" << mh==NULL ? mpg123_plain_strerror(err) : mpg123_strerror(mh) << std::endl;
         return false;

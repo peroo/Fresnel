@@ -23,8 +23,8 @@ void Indexer::addFolder(const std::string &directory)
         dir_path = directory;;
     }
 
-    DIR *dirent = opendir(dir_path.c_str());
-    if(dirent == NULL) {
+    DIR *dirstream = opendir(dir_path.c_str());
+    if(dirstream == NULL) {
         int error = errno;
         if(error == ENOTDIR) {
             Slingshot::Debug(1) << "Path \"" << dir_path << "\" isn't a directory." << std::endl;
@@ -40,6 +40,7 @@ void Indexer::addFolder(const std::string &directory)
         }
         return;
     }
+    closedir(dirstream);
 
     db.startTransaction();
 
@@ -150,6 +151,7 @@ void Indexer::updateFolder(const Directory &dir)
             }
         }
     }
+    closedir(dirstream);
 
     for(auto iter = files.begin(); iter != files.end(); ++iter) {
         iter->second.remove(&db);
@@ -197,4 +199,5 @@ void Indexer::scanFolder(const Directory &dir)
             }
         }
     }
+    closedir(dirstream);
 }

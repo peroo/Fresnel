@@ -6,11 +6,6 @@
 #include <string.h>
 #include <iostream>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/convenience.hpp>
-
-namespace fs = boost::filesystem;
-
 void decode(AudioDecoder *decoder)
 {
     try {
@@ -54,10 +49,10 @@ bool Audio::load(int output)
     else
         loaded = true;
 
-    if(extension == ".flac") {
+    if(extension == "flac") {
         decoder = new FLACDecoder(path);
     }
-    else if(extension == ".mp3") {
+    else if(extension == "mp3") {
         decoder = new MP3Decoder(path);
     }
     if(output == SLING_VORBIS) {
@@ -96,7 +91,7 @@ Metadata Audio::getMetadata()
 {
     if(!metadata.loaded()) {
         if(indexed)
-            metadata.fetchData(fileIndex);
+            metadata.fetchData(file_id);
         else
             metadata.loadData(path);
     }

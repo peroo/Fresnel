@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 2.6)
 find_package(Threads REQUIRED)
 set(LIBS ${LIBS} ${Threads_LIBRARIES})
 
-set(BOOST_LIBS thread-mt filesystem system)
+set(BOOST_LIBS thread-mt system)
 find_package(Boost COMPONENTS ${BOOST_LIBS} REQUIRED)
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 

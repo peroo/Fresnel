@@ -65,11 +65,11 @@ int Image::read(unsigned int pos, unsigned int max, char *buffer)
 bool Image::open()
 {
 
-    if(extension == ".jpg" || extension == ".jpeg") {
-        decodeJPEG(path.string());
+    if(extension == "jpg" || extension == "jpeg") {
+        decodeJPEG(path);
     }
-    else if(extension == ".png") {
-        decodePNG(path.string());
+    else if(extension == "png") {
+        decodePNG(path);
     }
     else {
         std::cout << "Unsupported image format: " << extension << std::endl;

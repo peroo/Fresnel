@@ -1,8 +1,6 @@
 #ifndef AUDIODECODER_H
 #define AUDIODECODER_H
 
-#include <boost/filesystem/path.hpp>
-
 #include <map>
 #include <string>
 
@@ -10,13 +8,13 @@ class AudioEncoder;
 
 class AudioDecoder {
     public:
+        explicit AudioDecoder(std::string _file) : file(_file), die(false) {}
         virtual ~AudioDecoder() {};
-        AudioDecoder(boost::filesystem::path _file) : file(_file), die(false) {}
         void init(AudioEncoder *_encoder);
         virtual bool start() = 0;
     protected:
         AudioEncoder *encoder;
-        boost::filesystem::path file;        
+        std::string file;        
         bool die;
 };
 

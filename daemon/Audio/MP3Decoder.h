@@ -4,13 +4,12 @@
 #include "AudioDecoder.h"
 
 #include <mpg123.h>
-#include <boost/filesystem/path.hpp>
 
 class AudioEncoder;
 
 class MP3Decoder: public AudioDecoder {
     public:
-        explicit MP3Decoder(boost::filesystem::path path) : AudioDecoder(path), mh(NULL), buffer(NULL){}
+        explicit MP3Decoder(std::string path) : AudioDecoder(path), mh(NULL), buffer(NULL){}
         ~MP3Decoder(); 
         bool start();
     private:

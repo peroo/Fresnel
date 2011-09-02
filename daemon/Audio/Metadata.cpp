@@ -1,19 +1,19 @@
 #include "Metadata.h"
 #include "../Database.h"
 
-#include <boost/filesystem/convenience.hpp>
+#include <iostream>
 
-namespace fs = boost::filesystem;
-
-bool Metadata::loadData(fs::path path)
+bool Metadata::loadData(std::string path)
 {
-    std::string ext = fs::extension(path);
-    for(unsigned int i = 0; i < ext.size(); ++i) {
-        ext[i] = tolower(ext[i]);
+    std::string ext = "";
+    size_t index = path.find_last_of('.');
+    if(index != std::string::npos) {
+        ext = path.substr(index + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
     }
 
-    if(ext == ".flac") {
-        TagLib::FLAC::File flac(path.string().c_str(), true);
+    if(ext == "flac") {
+        TagLib::FLAC::File flac(path.c_str(), true);
         if(!parseXiphComment(flac.xiphComment(false))) {
             if(!parseId3v2(flac.ID3v2Tag(false))) {
                 parseId3v1(flac.ID3v1Tag(true));
@@ -21,15 +21,15 @@ bool Metadata::loadData(fs::path path)
         }
         parseProperties(&flac);
     }
-    else if(ext == ".ogg") {
+    else if(ext == "ogg") {
         // TODO: Vorbis is assumed even though it might be FLAC/Speex. May or may not cause fatal problems.
-        TagLib::Ogg::Vorbis::File *ogg = new TagLib::Ogg::Vorbis::File(path.string().c_str(), true);
+        TagLib::Ogg::Vorbis::File *ogg = new TagLib::Ogg::Vorbis::File(path.c_str(), true);
         parseXiphComment(ogg->tag());
         parseProperties(ogg);
         delete ogg;
     }
-    else if(ext == ".mp3") {
-        TagLib::MPEG::File mp3(path.string().c_str(), true);
+    else if(ext == "mp3") {
+        TagLib::MPEG::File mp3(path.c_str(), true);
         //parseID3(mp3->tag());
         parseProperties(&mp3);
     }
@@ -47,7 +47,7 @@ bool Metadata::loaded()
 bool Metadata::fetchData(int index)
 {
     Database db;
-    fs::path path(db.getResourcePath(index));
+    std::string path(db.getResourcePath(index));
     loadData(path);
 
     return true;

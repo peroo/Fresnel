@@ -4,13 +4,12 @@
 #include "AudioDecoder.h"
 
 #include <FLAC++/decoder.h>
-#include <boost/filesystem/path.hpp>
 
 class AudioEncoder;
 
 class FLACDecoder: public AudioDecoder, FLAC::Decoder::File {
     public:
-        explicit FLACDecoder(boost::filesystem::path path) : AudioDecoder(path) {}
+        explicit FLACDecoder(std::string path) : AudioDecoder(path) {}
         ~FLACDecoder() {}
         bool start();
     private:

@@ -5,8 +5,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <microhttpd.h>
-#include <boost/cstdint.hpp>
-#include <boost/filesystem/path.hpp>
 
 #include <string>
 #include <vector>
@@ -25,9 +23,9 @@ enum req_module {
 class HttpRequest {
     public:
         HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method); 
-        ~HttpRequest();
+        ~HttpRequest() {}
         void render(Resource *res);
-        void render(boost::filesystem::path path);
+        void render(std::string path);
         void render(std::string text, std::string mimetype);
 
         void fail(int status);

@@ -2,7 +2,6 @@
 #define SLINGSHOT_H
 
 #include <ostream>
-#include <boost/filesystem/path.hpp>
 
 #define PORT 9996
 
@@ -16,7 +15,7 @@ class Slingshot {
         static std::ostream& Debug(int level);
 
 	private:
-		boost::filesystem::path base;
+        std::string base;
 		sqlite3* db;
 		MHD_Daemon *server;
 };

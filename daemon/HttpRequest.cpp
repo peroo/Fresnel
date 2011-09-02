@@ -1,15 +1,10 @@
 #include "HttpRequest.h"
 #include "Resource.h"
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/convenience.hpp>
-
 #include <iostream>
 #include <sstream>
 #include <cstring>
-
-namespace fs = boost::filesystem;
+#include <algorithm>
 
 HttpRequest::HttpRequest(MHD_Connection *_connection, std::string _url, std::string _method)
     : url(_url), method(_method), module(INDEX), connection(_connection)
@@ -17,11 +12,6 @@ HttpRequest::HttpRequest(MHD_Connection *_connection, std::string _url, std::str
     MHD_get_connection_values(_connection, MHD_HEADER_KIND, HttpRequest::headerIterator, &headers);
 
     parseURL();
-}
-
-
-HttpRequest::~HttpRequest()
-{
 }
 
 void HttpRequest::parseURL()
@@ -112,20 +102,27 @@ static int getSize(FILE *fp)
     fseek(fp, 0, SEEK_END);
     return ftell(fp);
 }
-void HttpRequest::render(fs::path path)
+void HttpRequest::render(std::string path)
 {
     std::string mimetype;
-    std::string ext = fs::extension(path);
-    if(ext == ".js") {
+    std::string ext = "";
+
+    size_t index = path.find_last_of('.');
+    if(index != std::string::npos) {
+        ext = path.substr(index + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    }
+
+    if(ext == "js") {
         mimetype = "text/javascript";
     }
-    else if(ext == ".htm" || ext == ".html") {
+    else if(ext == "htm" || ext == "html") {
         mimetype = "text/html";
     }
-    else if(ext == ".css") {
+    else if(ext == "css") {
         mimetype = "text/css";
     }
-    else if(ext == ".ico") {
+    else if(ext == "ico") {
         mimetype = "image/vnd.microsoft.icon";
     }
     else {
@@ -133,7 +130,7 @@ void HttpRequest::render(fs::path path)
     }
 
     FILE *fp;
-    fp = fopen(path.string().c_str(), "rb");
+    fp = fopen(path.c_str(), "rb");
 
     int size = getSize(fp);
     response = MHD_create_response_from_callback(size, 32*1024, file_reader, fp, file_close);

@@ -1,11 +1,9 @@
 #include "Resource.h"
 #include "Database.h"
 
-#include <boost/filesystem/convenience.hpp>
 #include <iostream>
 #include <vector>
-
-namespace fs = boost::filesystem;
+#include <algorithm>
 
 std::vector<Resource*> Resource::resources;
 
@@ -18,11 +16,21 @@ Resource::~Resource() {
     }
 }
 
+void Resource::readExtension() {
+    size_t index = path.find_last_of('.');
+    if(index != std::string::npos) {
+        extension = path.substr(index + 1);
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    }
+
+    extension = "";
+}
+
 Resource* Resource::init(int index)
 {
     // Caches last ten resources in case of new requests
     for(auto iter = resources.begin(); iter != resources.end(); ++iter) {
-        if(index == (*iter)->fileIndex) {
+        if(index == (*iter)->file_id) {
             Resource* r = *iter;
             resources.erase(iter);
             resources.insert(resources.begin(), r);
@@ -40,28 +48,24 @@ Resource* Resource::init(int index)
     resources.insert(resources.begin(), this);
 
 
-    fileIndex = index;
+    file_id = index;
     indexed = true;
 
     Database db = Database();
     path = db.getResourcePath(index);
-    extension = fs::extension(path);
+    readExtension();
 
     std::cout << "Opening resource: " << path << std::endl;
 
     return this;
 }
 
-bool Resource::init(boost::filesystem::path _path)
+bool Resource::init(std::string _path)
 {
-    fileIndex = -1;
+    file_id = -1;
     indexed = false;
     path = _path;
-
-    extension = fs::extension(path);
-    for(unsigned int i = 0; i < extension.size(); ++i) {
-        extension[i] = tolower(extension[i]);
-    }
+    readExtension();
 
     return true;
 }

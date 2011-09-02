@@ -20,8 +20,6 @@
 
 //#include "video.h"
 
-namespace fs = boost::filesystem;
-
 int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **ptr)
 {
     (void) cls;
@@ -67,18 +65,20 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
         query.parse();
     }
     else if(req->module == STATIC_FILE) {
-        fs::path path = fs::path("public_html/") / req->object;
-        if(fs::exists(path)) {
-            std::cout << method << ": " << path.string() << " - 200" << std::endl;
+        std::string path = std::string("public_html/") + '/' + req->object;
+        FILE *file;
+        if((file = fopen(path.c_str(), "r")) != NULL) {
+            fclose(file);
+            std::cout << method << ": " << path << " - 200" << std::endl;
             req->render(path);
         }
         else {
-            std::cout << method << ": " << path.string() << " - 404" << std::endl;
+            std::cout << method << ": " << path << " - 404" << std::endl;
             req->fail(MHD_HTTP_NOT_FOUND);
         }
     }
     else if(req->module == INDEX) {
-        req->render(fs::path("public_html/index.html"));
+        req->render(std::string("public_html/index.html"));
     }
 
     *ptr = req;
@@ -105,13 +105,19 @@ void connectionClosed(void *cls, struct MHD_Connection *connection, void **con_c
 
 bool Slingshot::init() {
 	// Setup working dir
-    base = fs::path(getenv("HOME")) / ".slingshot";
-	if(!fs::exists(base)) {
-		if(!create_directory(Slingshot::base))
-            std::cout << "Unable to create directory: " << base.string() << std::endl;
+    base = std::string(getenv("HOME")) + '/' +  ".slingshot";
+    DIR *dir;
+	if((dir = opendir(base.c_str())) == NULL) {
+        chdir(getenv("HOME"));
+		if(!mkdir(".slingshot", S_IRWXU)) {
+            std::cout << "Unable to create directory: " << base << std::endl;
 			return false;
+        }
 	}
-	chdir(Slingshot::base.directory_string().c_str());
+    else {
+        closedir(dir);
+    }
+	chdir(base.c_str());
 
 	// Init SQLite
     if(!SQLite::selectDB("db.sqlite")) {
@@ -155,6 +161,7 @@ int main(int argc, char *argv[])
     slingshot.init();
 
     Indexer index = Indexer();
+    index.addFolder("/home/peroo/raid/Music/inc/Flac/");
 
     while(1) {
         sleep(600);

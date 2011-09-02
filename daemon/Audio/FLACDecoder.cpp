@@ -19,7 +19,7 @@ void FLACDecoder::error_callback(FLAC__StreamDecoderErrorStatus status)
 
 bool FLACDecoder::start()
 {
-    FLAC::Decoder::File::init(file.string());
+    FLAC::Decoder::File::init(file);
     int ok = process_until_end_of_stream();
     FLAC::Decoder::File::finish();
     //std::cout << "decoding ended: " << ok << std::endl;

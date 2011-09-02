@@ -12,8 +12,8 @@ class ResFile {
     public:
         ResFile() {}
         ResFile(const struct stat &fileinfo, const std::string &name, int32_t path_id, const std::string &path);
-        ResFile(int32_t id, time_t modified, int type, std::string path)
-            : _id(id), _modified(modified), _type(type), _path(path)
+        ResFile(int32_t id, time_t modified, int32_t path_id, std::string path, int type)
+            : _id(id), _modified(modified), _path_id(path_id), _type(type), _path(path)
             {}
         ~ResFile() {};
 
@@ -36,13 +36,13 @@ class ResFile {
         void initInfo(const struct stat &fileinfo);
         std::string readExtension();
         
-        int32_t _id;
-        off_t _size;
         std::string _name;
-        int32_t _path_id;
+        int32_t _id;
         time_t _modified;
+        int32_t _path_id;
         int _type;
         std::string _path;
+        off_t _size;
 };
 
 #endif

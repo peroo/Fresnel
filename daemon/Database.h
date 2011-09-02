@@ -30,7 +30,7 @@ class Database : SQLite {
         void startTransaction();
         void commitTransaction();
 
-        std::map<std::string, ResFile> getFiles(int pathId);
+        void getFiles(std::map<std::string, ResFile> &files);
         std::string getResourcePath(int id);
         std::map<std::string, int> getPathChildren(int index);
 

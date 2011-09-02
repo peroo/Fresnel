@@ -29,6 +29,7 @@ class Indexer {
         std::list<Indexer::Directory> olddir_queue;
         std::list<ResFile> update_queue;
         std::list<ResFile> add_queue;
+        std::map<std::string, ResFile> existing_files;
 
         void scanFolder(const Indexer::Directory &dir);
         void updateFolder(const Indexer::Directory &dir);

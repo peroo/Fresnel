@@ -272,24 +272,20 @@ std::map<std::string, int> Database::getPathChildren(int32_t id)
 }
 
 
-std::map<std::string, ResFile> Database::getFiles(int32_t path_id)
+void Database::getFiles(std::map<std::string, ResFile> &files)
 {
-    std::map<std::string, ResFile> files;
-
-    query("SELECT id, filename, modified, type, path FROM resource JOIN path USING(path_id) WHERE path_id=?");
-    bindInt(path_id);
+    query("SELECT (path_id || filename) as key, type, path, id, modified, path_id FROM resource JOIN path USING(path_id)");
 
     while(step()) {
-        int id = getInt();
-        std::string filename = getString();
-        time_t modified(getInt64());
-        int type(getInt());
+        std::string key = getString();
+        int type = getInt();
         std::string path = getString();
+        int id = getInt();
+        time_t modified(getInt64());
+        int32_t path_id = getInt();
 
-        files[filename] = ResFile(id, modified, type, path);
+        files[key] = ResFile(id, modified, path_id, path, type);
     }
-
-    return files;
 }
 
 /*ResFile Database::getFile(int id)

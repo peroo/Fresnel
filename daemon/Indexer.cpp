@@ -48,6 +48,9 @@ void Indexer::addFolder(const std::string &directory)
     long mtime, seconds, useconds;
     gettimeofday(&start, NULL);
 
+
+    db.getFiles(existing_files);
+
     int32_t path_id = db.getPathID(dir_path);
     if(path_id != -1) {
         Directory dir = {dir_path, path_id};
@@ -82,6 +85,11 @@ void Indexer::addFolder(const std::string &directory)
         }
     }
 
+    for(auto iter = existing_files.begin(); iter != existing_files.end(); ++iter) {
+        iter->second.remove(&db);
+        ++removed;
+    }
+
     db.commitTransaction();
 
     gettimeofday(&end, NULL);
@@ -109,7 +117,6 @@ void Indexer::updateFolder(const Directory &dir)
     }
 
     std::map<std::string, int32_t> children = db.getPathChildren(dir.id);
-    std::map<std::string, ResFile> files = db.getFiles(dir.id);
 
     struct dirent *entity;
     while((entity = readdir(dirstream)) != NULL) {
@@ -118,19 +125,21 @@ void Indexer::updateFolder(const Directory &dir)
         lstat(path.c_str(), &filestat);
 
         if(S_ISREG(filestat.st_mode)) {
-            std::string name(entity->d_name);
 
-            auto result = files.find(name);
-            if(result != files.end()) {
+            std::stringstream stream;
+            stream << dir.id << entity->d_name;
+
+            auto result = existing_files.find(stream.str());
+            if(result != existing_files.end()) {
                 if(filestat.st_mtime > result->second.modified()) {
                     Slingshot::Debug(3) << "Updating " << path << std::endl;
                     result->second.updateInfo(filestat);
                     update_queue.push_front(result->second);
                 }
-                files.erase(result);
+                existing_files.erase(result);
             }
             else {
-                ResFile file(filestat, name, dir.id, dir.path);
+                ResFile file(filestat, std::string(entity->d_name), dir.id, dir.path);
                 add_queue.push_front(file);
             }
         }
@@ -152,11 +161,6 @@ void Indexer::updateFolder(const Directory &dir)
         }
     }
     closedir(dirstream);
-
-    for(auto iter = files.begin(); iter != files.end(); ++iter) {
-        iter->second.remove(&db);
-        ++removed;
-    }
 
     for(auto iter = children.begin(); iter != children.end(); ++iter) {
         removed += db.dirFileCount(iter->first);

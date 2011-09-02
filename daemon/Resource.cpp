@@ -22,8 +22,9 @@ void Resource::readExtension() {
         extension = path.substr(index + 1);
         std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
     }
-
-    extension = "";
+    else {
+        extension = "";
+    }
 }
 
 Resource* Resource::init(int index)

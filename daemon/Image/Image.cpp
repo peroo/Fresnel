@@ -242,9 +242,9 @@ bool Image::decodeJPEG(std::string filename)
         for(int x = 0; x < width; x++) {
             int pos = (cinfo.output_scanline-1)*width + x;
             pixel temp = {
-                *buffer[x*comp],
-                *buffer[x*comp + stepOne],
-                *buffer[x*comp + stepTwo]
+                (*buffer)[x*comp],
+                (*buffer)[x*comp + stepOne],
+                (*buffer)[x*comp + stepTwo]
             };
             bitmap[pos] = temp;
         }

@@ -24,7 +24,7 @@ void HttpRequest::parseURL()
         end += 1; 
 
     while(pos != end) {
-        unsigned int next = url.find_first_of('/', pos + 1);
+        size_t next = url.find_first_of('/', pos + 1);
         if(next == std::string::npos)
             next = end;
 

@@ -224,7 +224,7 @@ void DBQuery::fetchXSPFDate(std::string date)
 
 std::string escapeStr(std::string str)
 {
-    unsigned int pos = str.find_first_of('"', 0);
+    size_t pos = str.find_first_of('"', 0);
     while(pos != std::string::npos) {
         str.insert(pos, "\\");
         pos = str.find_first_of('"', pos+2);

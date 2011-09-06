@@ -11,12 +11,12 @@ sqlite3 *SQLite::db;
 SQLite::~SQLite() {
 }
 
-bool SQLite::selectDB(std::string filename)
+bool SQLite::selectDB(const std::string &filename)
 {
     return sqlite3_open(filename.c_str(), &db) == SQLITE_OK;
 }
 
-void SQLite::query(std::string query)
+void SQLite::query(const std::string &query)
 {
     auto iter = statements.find(query);
     if(iter != statements.end()) {
@@ -51,7 +51,7 @@ void SQLite::bindInt64(uint64_t value)
 {
     sqlite3_bind_int64(statement, ++paramIndex, value);
 }
-void SQLite::bindString(std::string value)
+void SQLite::bindString(const std::string &value)
 {
     sqlite3_bind_text(statement, ++paramIndex, value.c_str(), value.size(), SQLITE_TRANSIENT);
 }
@@ -93,7 +93,7 @@ bool SQLite::step()
     }
 }
 
-void SQLite::insert(std::string _query)
+void SQLite::insert(const std::string &_query)
 {
     query(_query);
     step();

@@ -11,16 +11,16 @@ class SQLite {
     public:
         SQLite() : used(false) {}
         ~SQLite();
-        static bool selectDB(std::string filename);
+        static bool selectDB(const std::string &filename);
     protected:
-        void            insert(std::string query);
-        void            query(std::string query);
+        void            insert(const std::string &query);
+        void            query(const std::string &query);
         bool            step();
         int             last_insert_id();
         int             rows_affected();
         void            bindInt(int value);
         void            bindInt64(uint64_t value);
-        void            bindString(std::string value);
+        void            bindString(const std::string &value);
         int             getInt();
         uint64_t        getInt64();
         double          getFloat();

@@ -39,7 +39,7 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
 
     if(req->module == RESOURCE) {
         Database db = Database();
-        Resource *res;
+        Resource *res = NULL;
 
         int id = atoi(req->object.c_str());
         int type = db.getResourceType(id);

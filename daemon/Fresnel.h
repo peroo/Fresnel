@@ -1,5 +1,5 @@
-#ifndef SLINGSHOT_H
-#define SLINGSHOT_H
+#ifndef FRESNEL_H 
+#define FRESNEL_H
 
 #include <ostream>
 
@@ -8,7 +8,7 @@
 struct sqlite3;
 struct MHD_Daemon;
 
-class Slingshot {
+class Fresnel {
 	public:
 		bool init();
 		void StopServer();

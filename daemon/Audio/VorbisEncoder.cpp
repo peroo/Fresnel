@@ -32,7 +32,7 @@ bool VorbisEncoder::start()
     vorbis_block_init(&vd, &vb);
 
     vorbis_comment_init(&vc);
-    vorbis_comment_add_tag(&vc, "ENCODER", "Slingshot v0.01");
+    vorbis_comment_add_tag(&vc, "ENCODER", "Fresnel v0.01");
     Metadata meta = parent->getMetadata();
     std::map<const char*, std::string> metaArray = meta.getFields();
 

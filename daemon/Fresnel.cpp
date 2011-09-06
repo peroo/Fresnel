@@ -1,4 +1,4 @@
-#include "Slingshot.h"
+#include "Fresnel.h"
 #include "SQLite.h"
 #include "Database.h"
 #include "HttpRequest.h"
@@ -7,9 +7,6 @@
 #include "Image/Image.h"
 #include "Indexer.h"
 
-#include <boost/cstdint.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <sqlite3.h>
 #include <microhttpd.h>
 
@@ -103,13 +100,13 @@ void connectionClosed(void *cls, struct MHD_Connection *connection, void **con_c
     delete (HttpRequest*)*con_cls;
 }
 
-bool Slingshot::init() {
+bool Fresnel::init() {
 	// Setup working dir
-    base = std::string(getenv("HOME")) + '/' +  ".slingshot";
+    base = std::string(getenv("HOME")) + '/' +  ".fresnel";
     DIR *dir;
 	if((dir = opendir(base.c_str())) == NULL) {
         chdir(getenv("HOME"));
-		if(!mkdir(".slingshot", S_IRWXU)) {
+		if(!mkdir(".fresnel", S_IRWXU)) {
             std::cout << "Unable to create directory: " << base << std::endl;
 			return false;
         }
@@ -147,7 +144,7 @@ bool Slingshot::init() {
     return true;
 }
 
-void Slingshot::StopServer()
+void Fresnel::StopServer()
 {
     MHD_stop_daemon(server);
 }
@@ -157,8 +154,8 @@ int main(int argc, char *argv[])
     (void) argc;
     (void) argv;
 
-    Slingshot slingshot = Slingshot();
-    slingshot.init();
+    Fresnel fresnel = Fresnel();
+    fresnel.init();
 
     Indexer index = Indexer();
     index.addFolder("/home/peroo/raid/Music/inc/Flac/");
@@ -167,12 +164,12 @@ int main(int argc, char *argv[])
         sleep(600);
     }
 
-    slingshot.StopServer();
+    fresnel.StopServer();
 
     return 0;
 }
 
-std::ostream& Slingshot::Debug(int level)
+std::ostream& Fresnel::Debug(int level)
 {
     std::clog.clear(level <= 5 ? std::ios_base::goodbit : std::ios_base::badbit);
     return std::clog;

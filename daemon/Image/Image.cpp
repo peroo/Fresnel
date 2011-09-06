@@ -1,5 +1,4 @@
 #include "Image.h"
-#include "../Slingshot.h"
 
 #include <jpeglib.h>
 #include <jerror.h>

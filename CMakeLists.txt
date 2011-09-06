@@ -1,4 +1,4 @@
-project(slingshot)
+project(Fresnel)
 cmake_minimum_required(VERSION 2.6)
 
 # check libs and packages (headers + lib)

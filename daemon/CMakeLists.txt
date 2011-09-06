@@ -11,7 +11,7 @@ set(HDRS
     Indexer.h
     ResFile.h
     Resource.h
-    Slingshot.h
+    Fresnel.h
     SQLite.h
     Audio/AudioDecoder.h
     Audio/AudioEncoder.h
@@ -30,7 +30,7 @@ set(SRC
     Indexer.cpp
     ResFile.cpp
     Resource.cpp
-    Slingshot.cpp
+    Fresnel.cpp
     SQLite.cpp
     Audio/AudioDecoder.cpp
     Audio/AudioEncoder.cpp
@@ -42,6 +42,6 @@ set(SRC
     Image/Image.cpp
 )
 
-add_executable(slingshot ${SRC})
-target_link_libraries(slingshot ${LIBS})
+add_executable(fresnel ${SRC})
+target_link_libraries(fresnel ${LIBS})
     

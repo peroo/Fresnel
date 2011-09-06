@@ -2,7 +2,7 @@
 #include "Audio/Audio.h"
 #include "Database.h"
 #include "ResFile.h"
-#include "Slingshot.h"
+#include "Fresnel.h"
 
 #include <list>
 #include <map>
@@ -27,16 +27,16 @@ void Indexer::addFolder(const std::string &directory)
     if(dirstream == NULL) {
         int error = errno;
         if(error == ENOTDIR) {
-            Slingshot::Debug(1) << "Path \"" << dir_path << "\" isn't a directory." << std::endl;
+            Fresnel::Debug(1) << "Path \"" << dir_path << "\" isn't a directory." << std::endl;
         }
         else if(error == ENOENT) {
-            Slingshot::Debug(1) << "Path \"" << dir_path << "\" doesn't exist." << std::endl;
+            Fresnel::Debug(1) << "Path \"" << dir_path << "\" doesn't exist." << std::endl;
         }
         else if(error == EACCES) {
-            Slingshot::Debug(1) << "Access denied to path: \"" << dir_path << "\"" << std::endl;
+            Fresnel::Debug(1) << "Access denied to path: \"" << dir_path << "\"" << std::endl;
         }
         else {
-            Slingshot::Debug(1) << "Unknown error accessing path: \"" << dir_path << "\"" << std::endl;
+            Fresnel::Debug(1) << "Unknown error accessing path: \"" << dir_path << "\"" << std::endl;
         }
         return;
     }
@@ -98,7 +98,7 @@ void Indexer::addFolder(const std::string &directory)
     useconds = end.tv_usec - start.tv_usec;
     mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
     
-    Slingshot::Debug(3) << "Finished scanning \"" << directory << "\"." << std::endl <<
+    Fresnel::Debug(3) << "Finished scanning \"" << directory << "\"." << std::endl <<
                             "------------" << std::endl <<
                             "Added: " << added << std::endl <<
                             "Updated: " << updated << std::endl <<
@@ -111,7 +111,7 @@ void Indexer::updateFolder(const Directory &dir)
     DIR *dirstream = opendir(dir.path.c_str());
     if(dirstream == NULL) {
         int error = errno;
-        Slingshot::Debug(1) << "Unknown error code " << error << 
+        Fresnel::Debug(1) << "Unknown error code " << error << 
             "accessing path: \"" << dir.path << "\"" << std::endl;
         return;
     }
@@ -132,7 +132,7 @@ void Indexer::updateFolder(const Directory &dir)
             auto result = existing_files.find(stream.str());
             if(result != existing_files.end()) {
                 if(filestat.st_mtime > result->second.modified()) {
-                    Slingshot::Debug(3) << "Updating " << path << std::endl;
+                    Fresnel::Debug(3) << "Updating " << path << std::endl;
                     result->second.updateInfo(filestat);
                     update_queue.push_front(result->second);
                 }
@@ -165,7 +165,7 @@ void Indexer::updateFolder(const Directory &dir)
     for(auto iter = children.begin(); iter != children.end(); ++iter) {
         removed += db.dirFileCount(iter->first);
         db.removeDir(iter->second);
-        Slingshot::Debug(3) << "Removing " << iter->first << std::endl;
+        Fresnel::Debug(3) << "Removing " << iter->first << std::endl;
     }
 }
 
@@ -174,7 +174,7 @@ void Indexer::scanFolder(const Directory &dir)
     DIR *dirstream = opendir(dir.path.c_str());
     if(dirstream == NULL) {
         int error = errno;
-        Slingshot::Debug(1) << "Unknown error code " << error << 
+        Fresnel::Debug(1) << "Unknown error code " << error << 
             "accessing path: \"" << dir.path << "\"" << std::endl;
         return;
     }
@@ -186,7 +186,7 @@ void Indexer::scanFolder(const Directory &dir)
         int result = lstat(path.c_str(), &filestat);
         if(result == -1) {
             int error = errno;
-            Slingshot::Debug(1) << "Error #" << error << " in path: " << path << std::endl;
+            Fresnel::Debug(1) << "Error #" << error << " in path: " << path << std::endl;
             return;
         }
 

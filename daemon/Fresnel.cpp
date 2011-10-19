@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
 
     Indexer index = Indexer();
     index.addFolder("/home/peroo/raid/Music/inc/Flac/");
+    index.startWatcher();
 
     while(1) {
         sleep(600);

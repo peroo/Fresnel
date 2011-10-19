@@ -12,6 +12,9 @@
 #include <dirent.h>
 #include <errno.h>
 
+#define EVENT_SIZE  ( sizeof (struct inotify_event) )
+#define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
+
 void Indexer::addFolder(const std::string &directory)
 {
     std::string dir_path;
@@ -30,8 +33,8 @@ void Indexer::addFolder(const std::string &directory)
     }
 
     // Check that dir exists and is openable
-    DIR *dirstream = nullptr;
-    if(!openDir(dir_path, dirstream)) {
+    DIR *dirstream = NULL;
+    if(!openDir(dir_path, &dirstream)) {
         return;
     }
     closedir(dirstream);
@@ -51,6 +54,7 @@ void Indexer::addFolder(const std::string &directory)
     int32_t path_id = db.getPathID(dir_path);
     if(path_id != -1) {
         // Indexed dir, scan tree for updated and new files
+        watchDir(dir_path, path_id);
         Directory dir = {dir_path, path_id};
         olddir_queue.push_front(dir);
         while(olddir_queue.empty() == false) {
@@ -62,6 +66,7 @@ void Indexer::addFolder(const std::string &directory)
     else {
         // New dir, do full scan of tree
         path_id = db.insertDir(dir_path, 0);
+        watchDir(dir_path, path_id);
         Directory dir = {dir_path, path_id}; 
         newdir_queue.push_front(dir);
     }
@@ -111,8 +116,8 @@ void Indexer::addFolder(const std::string &directory)
 
 void Indexer::updateFolder(const Directory &dir)
 {
-    DIR *dirstream = nullptr;
-    if(!openDir(dir.path, dirstream)) {
+    DIR *dirstream = NULL;
+    if(!openDir(dir.path, &dirstream)) {
         return;
     }
 
@@ -148,12 +153,14 @@ void Indexer::updateFolder(const Directory &dir)
                     (entity->d_name[1] != '.' || entity->d_name[2] != '\0'))) {
                 auto result = children.find(path);
                 if(result != children.end()) {
+                    watchDir(path, result->second);
                     Directory olddir = {path, result->second};
                     olddir_queue.push_front(olddir);
                     children.erase(result);
                 }
                 else {
                     int32_t id = db.insertDir(path, dir.id);
+                    watchDir(path, id);
                     Directory newdir = {path, id};
                     newdir_queue.push_front(newdir);
                 }
@@ -171,8 +178,8 @@ void Indexer::updateFolder(const Directory &dir)
 
 void Indexer::scanFolder(const Directory &dir)
 {
-    DIR *dirstream = nullptr;
-    if(!openDir(dir.path, dirstream)) {
+    DIR *dirstream = NULL;
+    if(!openDir(dir.path, &dirstream)) {
         return;
     }
 
@@ -195,6 +202,7 @@ void Indexer::scanFolder(const Directory &dir)
             if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
                     (entity->d_name[1] != '.' || entity->d_name[2] != '\0'))) {
                 int32_t id = db.insertDir(path, dir.id);
+                watchDir(path, id);
                 Directory newdir = {path, id};
                 newdir_queue.push_front(newdir);
             }
@@ -208,42 +216,135 @@ bool Indexer::initInotify()
     inotify_fd = inotify_init();
     if(inotify_fd == -1) {
         Fresnel::Debug(1) << "Inotify initialization failed: ";
-        int error = errno;
-        if(error == EMFILE) {
-            Fresnel::Debug(1) << "The user limit on the total number of inotify instances has been reached.";
-        }
-        else if(error == ENFILE) {
-            Fresnel::Debug(1) << "The system limit on the total number of file descriptors has been reached.";
-        }
-        else if(error == ENOMEM) {
-            Fresnel::Debug(1) <<  "Insufficient kernel memory is available.";
+        switch(errno) {
+            case EMFILE:
+                Fresnel::Debug(1) << "The user limit on the total number of inotify instances has been reached.";
+                break;
+            case ENFILE:
+                Fresnel::Debug(1) << "The system limit on the total number of file descriptors has been reached.";
+                break;
+            case ENOMEM:
+                Fresnel::Debug(1) <<  "Insufficient kernel memory is available.";
         }
         Fresnel::Debug(1) << std::endl;
-
         return false;
     }
     return true;
 }
 
-bool Indexer::openDir(const std::string &dir_path, DIR *dirstream)
+bool Indexer::openDir(const std::string &dir_path, DIR **dirstream)
 {
-    dirstream = opendir(dir_path.c_str());
+    *dirstream = opendir(dir_path.c_str());
     if(dirstream == NULL) {
-        int error = errno;
-        if(error == ENOTDIR) {
-            Fresnel::Debug(1) << "Path \"" << dir_path << "\" isn't a directory." << std::endl;
+        Fresnel::Debug(1) << "Path \"" << dir_path << "\"";
+        switch(errno) {
+            case ENOTDIR:
+                Fresnel::Debug(1) <<  " isn't a directory.";
+                break;
+            case ENOENT:
+                Fresnel::Debug(1) << " doesn't exist.";
+                break;
+            case EACCES:
+                Fresnel::Debug(1) << ": Access denied";
+                break;
+            default:
+                Fresnel::Debug(1) << ": Unknown error.";
         }
-        else if(error == ENOENT) {
-            Fresnel::Debug(1) << "Path \"" << dir_path << "\" doesn't exist." << std::endl;
-        }
-        else if(error == EACCES) {
-            Fresnel::Debug(1) << "Access denied to path: \"" << dir_path << "\"" << std::endl;
-        }
-        else {
-            Fresnel::Debug(1) << "Unknown error accessing path: \"" << dir_path << "\"" << std::endl;
-        }
+        Fresnel::Debug(1) << std::endl;
         return false;
     }
     return true;
+}
+
+void Indexer::watchDir(const std::string &path, int32_t path_id)
+{
+    int descriptor = inotify_add_watch(inotify_fd, path.c_str(), IN_MOVE|IN_CLOSE_WRITE|IN_DELETE|IN_CREATE);
+    if(descriptor == -1) {
+        Fresnel::Debug(1) << "Error adding watch: ";
+        switch(errno) {
+            case EACCES:
+                Fresnel::Debug(1) << "Read access to the given file is not permitted.";
+                break;
+            case EBADF:
+                Fresnel::Debug(1) << "The given inotify descriptor is not valid.";
+                break;
+            case EFAULT:
+                Fresnel::Debug(1) << "Pathname points outside of the process's accessible address space.";
+                break;
+            case EINVAL:
+                Fresnel::Debug(1) << "The given event mask contains no legal events; or fd is not an inotify file descriptor.";
+                break;
+            case ENOMEM:
+                Fresnel::Debug(1) << "Insufficient kernel memory was available.";
+                break;
+            case ENOSPC:
+                Fresnel::Debug(1) << "The user limit on the total number of inotify watches was reached or the kernel failed to allocate a needed resource.";
+        }
+        Fresnel::Debug(1) << std::endl;
+    }
+    else {
+        watch_index[path_id] = descriptor;
+    }
+}
+
+int Indexer::getInotifyFD()
+{
+    return inotify_fd;
+}
+
+void* Indexer::readInotify(void *indexer_pointer)
+{
+    Indexer *indexer = static_cast<Indexer*>(indexer_pointer);
+    int inotify_fd = indexer->getInotifyFD();
+    //int fdsize = sizeof(inotify_fd) + 1;
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(inotify_fd, &rfds);
+    //struct timeval timeout; 
+    //timeout.tv_sec = 1;
+    char buffer[BUF_LEN];
+    int length, i;
+
+    //int result = 0;
+    while(1) {
+        //result = select(fdsize, &rfds, NULL, NULL, NULL);
+
+        while(1) {//result > 0) {
+            length = read(inotify_fd, buffer, BUF_LEN);
+            i = 0;
+            while(i < length) {
+                 struct inotify_event *event = (struct inotify_event *) &buffer[i];
+                 if(event->len) {
+                     if(event->mask & IN_CREATE) {
+                         Fresnel::Debug(1) << "IN_CREATE: " << event->name << std::endl;
+                     }
+                     else if (event->mask & IN_MOVED_FROM) {
+                         Fresnel::Debug(1) << "IN_MOVED_FROM:" << event->name << std::endl;
+                     }
+                     else if(event->mask & IN_MOVED_TO) {
+                         Fresnel::Debug(1) << "IN_MOVED_TO" << event->name << std::endl;
+                     }
+                     else if(event->mask & IN_DELETE) {
+                         Fresnel::Debug(1) << "IN_DELETE" << event->name << std::endl;
+                     }
+                     else if(event->mask & IN_CLOSE_WRITE) {
+                         Fresnel::Debug(1) << "IN_CLOSE_WRITE" << event->name << std::endl;
+                     }
+                 }
+                 i += EVENT_SIZE + event->len;
+            }
+
+            //result = select(fdsize, &rfds, NULL, NULL, &timeout);
+        }
+    }
+    return NULL;
+}
+
+void Indexer::startWatcher()
+{
+    int status = pthread_create(&inotify_reader, NULL, &Indexer::readInotify, this); 
+    if(status != 0) {
+        Fresnel::Debug(1) << "A critical error occurred when attempting to initialize inotify thread." << std::endl;
+    }
 }
 

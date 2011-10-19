@@ -33,6 +33,9 @@ class Indexer {
 
         void scanFolder(const Indexer::Directory &dir);
         void updateFolder(const Indexer::Directory &dir);
+
+        bool initInotify();
+        bool openDir(const std::string &dir, DIR *dirstream);
 };
 
 #endif

@@ -6,11 +6,11 @@
 
 #include <list>
 #include <map>
+#include <sys/inotify.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
-
 
 void Indexer::addFolder(const std::string &directory)
 {

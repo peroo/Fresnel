@@ -10,7 +10,6 @@
 
 class Indexer {
     public:
-        Indexer() : added(0), removed(0), updated(0) {};
         void addFolder(const std::string &filename);
 
         struct Directory {
@@ -23,6 +22,7 @@ class Indexer {
         uint32_t added;
         uint32_t removed;
         uint32_t updated;
+        int      inotify_fd;
 
         // TODO: Could be turned into forward_list or potential savings
         std::list<Indexer::Directory> newdir_queue;

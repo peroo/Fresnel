@@ -400,6 +400,7 @@ void Indexer::processMove(struct inotify_event *event)
 {
     Move move;
     if(move_cache.find(event->cookie) != move_cache.end()) {
+        // Previously encounter cookie, fetch partial move
         move = move_cache[event->cookie];
     }
 
@@ -414,35 +415,31 @@ void Indexer::processMove(struct inotify_event *event)
 
     if(move.to_id != 0 && move.from_id != 0) {
         if(move.is_dir)
-            movePath(event->cookie);
+            movePath(move);
         else
-            moveFile(event->cookie);
+            moveFile(move);
+        move_cache.erase(event->cookie);
     }
     else {
+        // New move, insert partial into cache
         move.is_dir = (event->mask & IN_ISDIR);
         move_cache[event->cookie] = move;
 
     }
 }
 
-void Indexer::movePath(uint32_t cookie)
+void Indexer::movePath(const Move &move)
 {
-    Move move = move_cache[cookie];
     db.movePath(move.from_id, move.to_id, move.from_name, move.to_name);
-    move_cache.erase(cookie);
     Fresnel::Debug(1) << "Inotify: Path \"" << move.from_name << 
         "\" moved to \"" << move.to_name << "\"." << std::endl;
 }
 
-void Indexer::moveFile(uint32_t cookie)
+void Indexer::moveFile(const Move &move)
 {
-    Move move = move_cache[cookie];
-
     int file_id = db.getFileIDByName(move.from_id, move.from_name);
     ResFile file = db.getFileByID(file_id);
     file.updatePath(&db, move.to_id, move.to_name);
-
-    move_cache.erase(cookie);
     Fresnel::Debug(1) << "Inotify: File \"" << move.from_name << 
         "\" moved to \"" << move.to_name << "\"." << std::endl;
 }
@@ -461,7 +458,8 @@ void Indexer::processOrphanMoves()
             }
             else {
                 // Dir moved out of tree
-                int32_t id = db.getPathIDByName(move.from_id, move.from_name);
+                int32_t id = db.getPathIDByName(move.from_id, 
+                                                move.from_name);
                 removeTree(id);
                 Fresnel::Debug(1) << "Inotify: Path " << 
                     move.from_name << " moved out." << std::endl;
@@ -476,7 +474,8 @@ void Indexer::processOrphanMoves()
             }
             else {
                 // File moved out of tree
-                int32_t id = db.getFileIDByName(move.from_id, move.from_name);
+                int32_t id = db.getFileIDByName(move.from_id, 
+                                                move.from_name);
                 ResFile file = db.getFileByID(id);
                 file.remove(&db);
                 Fresnel::Debug(1) << "Inotify: file " << 
@@ -526,7 +525,7 @@ void Indexer::watchDir(const std::string &path, int32_t path_id)
     }
     else {
         watch_index[descriptor] = path_id;
-        watch_index[path_id] = descriptor;
+        reverse_watch_index[path_id] = descriptor;
     }
 }
 
@@ -583,7 +582,6 @@ void Indexer::removeTree(int32_t root_id)
     // Recursive remove
     db.removeDir(root_id);
 }
-
 
 bool Indexer::updateFile(int32_t file_id)
 {

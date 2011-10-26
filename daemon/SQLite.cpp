@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <assert.h>
 
 sqlite3 *SQLite::db;
 
@@ -45,15 +46,19 @@ void SQLite::query(const std::string &query)
 
 void SQLite::bindInt(int value)
 {
-    sqlite3_bind_int(statement, ++paramIndex, value);
+    int result = sqlite3_bind_int(statement, ++paramIndex, value);
+    assert(result == SQLITE_OK);
 }
 void SQLite::bindInt64(uint64_t value)
 {
-    sqlite3_bind_int64(statement, ++paramIndex, value);
+    int result = sqlite3_bind_int64(statement, ++paramIndex, value);
+    assert(result == SQLITE_OK);
 }
 void SQLite::bindString(const std::string &value)
 {
-    sqlite3_bind_text(statement, ++paramIndex, value.c_str(), value.size(), SQLITE_TRANSIENT);
+    int result = sqlite3_bind_text(statement, ++paramIndex, value.c_str(), 
+                                    value.size(), SQLITE_STATIC);
+    assert(result == SQLITE_OK);
 }
 int SQLite::getInt()
 {
@@ -71,7 +76,8 @@ std::string SQLite::getString()
 {
     const unsigned char* text = sqlite3_column_text(statement, colIndex);
     int bytes = sqlite3_column_bytes(statement, colIndex++);
-    return std::string((const char*)text, bytes);
+    std::string str = std::string((const char*)text, bytes);
+    return str;
 }
 void SQLite::getVoid()
 {

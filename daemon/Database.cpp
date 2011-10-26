@@ -44,7 +44,7 @@ std::string Database::getResourcePath(int id)
     return path;
 }
 
-int Database::getArtistId(std::string name, std::string sortname)
+int Database::getArtistId(const std::string &name, const std::string &sortname)
 {
     int id = artistCache[name];
     if(id)
@@ -80,7 +80,7 @@ int Database::getArtistId(std::string name, std::string sortname)
     return id;
 }
 
-int Database::getAlbumId(std::string title, std::string date, int artist)
+int Database::getAlbumId(const std::string &title, const std::string &date, int artist)
 {
     int id = albumCache[title + date];
     if(id)
@@ -274,9 +274,9 @@ int Database::getFileIDByName(int path_id, const std::string &filename)
 
 int32_t Database::getPathIDByName(int32_t path_id, const std::string &name)
 {
-    query("SELECT path_id FROM path WHERE path=?");
+    const std::string path = getPathByID(path_id) + '/' + name;
 
-    std::string path = getPathByID(path_id) + '/' + name;
+    query("SELECT path_id FROM path WHERE path=?");
     bindString(path);
 
     if(step())
@@ -443,7 +443,15 @@ bool Database::createTables()
             WHERE parent=OLD.path_id; \
         END;";
 
-    std::string pathTrigger = "CREATE TRIGGER Path_CascadeDelete \
+    std::string pathCascadingDeleteTrigger = "CREATE TRIGGER Path_CascadeDelete \
+        AFTER DELETE ON path \
+        FOR EACH ROW \
+        BEGIN \
+            DELETE FROM path \
+            WHERE parent=OLD.path_id; \
+        END;";
+
+    std::string pathResourceDeleteTrigger= "CREATE TRIGGER Path_ResourceDelete \
         AFTER DELETE ON path \
         FOR EACH ROW \
         BEGIN \
@@ -451,7 +459,7 @@ bool Database::createTables()
             WHERE path_id = OLD.path_id; \
         END;";
 
-    std::string resAudioTrigger = "CREATE TRIGGER Audio_CascadeDelete \
+    std::string audioDeleteTrigger = "CREATE TRIGGER Resource_CascadeDelete \
         AFTER DELETE ON resource \
         FOR EACH ROW \
         BEGIN \
@@ -459,14 +467,13 @@ bool Database::createTables()
             WHERE id = OLD.id; \
         END;";
 
-    std::string resImageTrigger = "CREATE TRIGGER Image_CascadeDelete \
+    std::string imageDeleteTrigger = "CREATE TRIGGER Resource_CascadeDelete \
         AFTER DELETE ON resource \
         FOR EACH ROW \
         BEGIN \
             DELETE FROM image \
             WHERE id = OLD.id; \
         END;";
-
 
     insert(path);
     insert(resource);
@@ -478,9 +485,10 @@ bool Database::createTables()
     insert(image);
 
     insert(pathUpdateTrigger);
-    insert(pathTrigger);
-    insert(resAudioTrigger);
-    insert(resImageTrigger);
+    insert(pathCascadingDeleteTrigger);
+    insert(pathResourceDeleteTrigger);
+    insert(audioDeleteTrigger);
+    insert(imageDeleteTrigger);
 
     return true;
 }

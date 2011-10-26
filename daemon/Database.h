@@ -44,8 +44,10 @@ class Database : SQLite {
     private:
         int insertFile(ResFile *file);
         void updateFile(ResFile *file);
-        int getArtistId(std::string artist, std::string sortname);
-        int getAlbumId(std::string title, std::string date, int artist);
+        int getArtistId(const std::string &artist,
+                        const std::string &sortname);
+        int getAlbumId(const std::string &title, 
+                        const std::string &date, int artist);
 
         static std::map<std::string, int> artistCache;
         static std::map<std::string, int> albumCache;

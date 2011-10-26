@@ -57,8 +57,8 @@ class Indexer {
         void processIEvent(struct inotify_event *event);
         void processOrphanMoves();
         void processMove(struct inotify_event *event);
-        void movePath(uint32_t cookie);
-        void moveFile(uint32_t cookie);
+        void movePath(const Move &move);
+        void moveFile(const Move &move);
 
         bool openDir(const std::string &dir, DIR **dirstream);
 };

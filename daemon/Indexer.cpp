@@ -6,6 +6,7 @@
 
 #include <list>
 #include <map>
+#include <utility>
 #include <sys/inotify.h>
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -57,9 +58,8 @@ void Indexer::addFolder(const std::string &directory)
     root_index[path_id] = true;
     if(path_id != -1) {
         // Indexed dir, scan tree for updated and new files
-        watchDir(dir_path, path_id);
-        Directory dir = {dir_path, path_id};
-        olddir_queue.push_front(dir);
+        std::pair<int32_t, std::string> dir(path_id, dir_path);
+        olddir_queue.push_back(dir);
         while(olddir_queue.empty() == false) {
             dir = olddir_queue.front();
             olddir_queue.pop_front();
@@ -67,18 +67,14 @@ void Indexer::addFolder(const std::string &directory)
         }
     }
     else {
-        // New dir, do full scan of tree
-        path_id = db.insertDir(dir_path, 0);
-        watchDir(dir_path, path_id);
-        Directory dir = {dir_path, path_id}; 
-        newdir_queue.push_front(dir);
+        // New dir, schedule full scan of tree
+        newdir_queue.push_back(std::make_pair(0, dir_path));
     }
 
-    // Scan new dirs found in update scan 
+    // Scan all new dirs found
     while(newdir_queue.empty() == false) {
-        Directory dir = newdir_queue.front();
+        scanFolder(newdir_queue.front());
         newdir_queue.pop_front();
-        scanFolder(dir);
     }
 
     // Remove all files no longer found
@@ -103,18 +99,22 @@ void Indexer::addFolder(const std::string &directory)
                             "Time elapsed: " << mtime << "ms." << std::endl;
 }
 
-void Indexer::updateFolder(const Directory &dir)
+void Indexer::updateFolder(const std::pair<int32_t, std::string> &dir)
 {
+    int32_t dir_id = dir.first;
+    std::string dir_path = dir.second;
+
     DIR *dirstream = NULL;
-    if(!openDir(dir.path, &dirstream)) {
+    if(!openDir(dir_path, &dirstream)) {
         return;
     }
 
-    std::map<std::string, int32_t> children = db.getPathChildren(dir.id);
+    watchDir(dir_path, dir_id);
+    std::map<std::string, int32_t> children = db.getPathChildren(dir_id);
 
     struct dirent *entity;
     while((entity = readdir(dirstream)) != NULL) {
-        std::string path = dir.path + '/' + entity->d_name;
+        std::string path = dir_path + '/' + entity->d_name;
         struct stat filestat;
         if(!statFile(path, &filestat)) {
             // Stat failed, skip file
@@ -123,7 +123,7 @@ void Indexer::updateFolder(const Directory &dir)
 
         if(S_ISREG(filestat.st_mode)) {
             std::stringstream stream;
-            stream << dir.id << entity->d_name;
+            stream << dir_id << entity->d_name;
 
             auto result = existing_files.find(stream.str());
             if(result != existing_files.end()) {
@@ -136,7 +136,7 @@ void Indexer::updateFolder(const Directory &dir)
                 existing_files.erase(result);
             }
             else {
-                insertFile(dir.id, std::string(entity->d_name));
+                insertFile(dir_id, std::string(entity->d_name));
             }
         }
         else if(S_ISDIR(filestat.st_mode)) {
@@ -145,17 +145,14 @@ void Indexer::updateFolder(const Directory &dir)
                 auto result = children.find(path);
                 if(result != children.end()) {
                     // Old dir, update contents
-                    watchDir(path, result->second);
-                    Directory olddir = {path, result->second};
-                    olddir_queue.push_front(olddir);
+                    olddir_queue.push_back(
+                        std::make_pair(result->second, path)
+                    );
                     children.erase(result);
                 }
                 else {
                     // New dir, do full scan
-                    int32_t id = db.insertDir(path, dir.id);
-                    watchDir(path, id);
-                    Directory newdir = {path, id};
-                    newdir_queue.push_front(newdir);
+                    newdir_queue.push_back(std::make_pair(dir_id, path));
                 }
             }
         }
@@ -170,16 +167,24 @@ void Indexer::updateFolder(const Directory &dir)
     }
 }
 
-void Indexer::scanFolder(const Directory &dir)
+void Indexer::scanFolder(const std::pair<int32_t, std::string> &dir)
 {
+    int32_t parent_id = dir.first;
+    std::string dir_path = dir.second;
+
     DIR *dirstream = NULL;
-    if(!openDir(dir.path, &dirstream)) {
+    if(!openDir(dir_path, &dirstream)) {
+        Fresnel::Debug(3) << "Failed to open path \"" << 
+            dir_path << "\"" << std::endl;
         return;
     }
 
+    int32_t dir_id = db.insertDir(dir_path, parent_id);
+    watchDir(dir_path, dir_id);
+
     struct dirent *entity;
     while((entity = readdir(dirstream)) != NULL) {
-        std::string path = dir.path + '/' + entity->d_name;
+        std::string path = dir_path + '/' + entity->d_name;
         struct stat filestat;
         if(!statFile(path, &filestat)) {
             // Stat failed, skip file
@@ -187,15 +192,12 @@ void Indexer::scanFolder(const Directory &dir)
         }
 
         if(S_ISREG(filestat.st_mode)) {
-            insertFile(dir.id, std::string(entity->d_name));
+            insertFile(dir_id, std::string(entity->d_name));
         }
         else if(S_ISDIR(filestat.st_mode)) {
             if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
                     (entity->d_name[1] != '.' || entity->d_name[2] != '\0'))) {
-                int32_t id = db.insertDir(path, dir.id);
-                watchDir(path, id);
-                Directory newdir = {path, id};
-                newdir_queue.push_front(newdir);
+                newdir_queue.push_back(std::make_pair(dir_id, path));
             }
         }
     }
@@ -347,10 +349,9 @@ void Indexer::processIEvent(struct inotify_event *event)
             // New dir, insert in db and watch
             int32_t parent_id = watch_index[event->wd];
             std::string name = std::string(event->name);
-            if(insertDir(parent_id, name)) {
-                Fresnel::Debug(1) << "Inotify: " << 
-                    name << " registered." << std::endl;
-            }
+            insertTree(parent_id, name);
+            Fresnel::Debug(1) << "Inotify: " << 
+                name << " registered." << std::endl;
         }
     }
     else if (event->mask & IN_MOVE) {
@@ -454,7 +455,7 @@ void Indexer::processOrphanMoves()
         if(move.is_dir) {
             if(move.from_id == 0) {
                 // Dir moved into tree
-                insertDir(move.to_id, move.to_name);
+                insertTree(move.to_id, move.to_name);
                 Fresnel::Debug(1) << "Inotify: Path " << 
                     move.to_name << " moved in." << std::endl;
             }
@@ -551,16 +552,16 @@ bool Indexer::insertFile(int32_t path_id, const std::string &name)
     return false;
 }
 
-bool Indexer::insertDir(int32_t parent_id, const std::string &name)
+void Indexer::insertTree(int32_t parent_id, const std::string &name)
 {
     std::string parent_path = db.getPathByID(parent_id);
-    std::string dir_path = parent_path + '/' + name;
+    std::string path = parent_path + '/' + name;
 
-    int32_t path_id = db.insertDir(dir_path, parent_id);
-    watchDir(dir_path, path_id);
-    Directory dir = {dir_path, path_id}; 
-    scanFolder(dir);
-    return true;
+    newdir_queue.push_back(std::make_pair(parent_id, path));
+    while(newdir_queue.empty() == false) {
+        scanFolder(newdir_queue.front());
+        newdir_queue.pop_front();
+    }
 }
 
 void Indexer::removeTree(int32_t root_id)

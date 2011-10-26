@@ -158,8 +158,9 @@ int main(int argc, char *argv[])
     fresnel.init();
 
     Indexer index = Indexer();
-    index.addFolder("/home/peroo/raid/Music/inc/Flac/");
-    index.startWatcher();
+    //index.addFolder("/home/peroo/raid/Music/inc/Flac/");
+    index.addFolder("/home/peroo/raid/Music/lol/");
+    index.watchFolders();
 
     while(1) {
         sleep(600);

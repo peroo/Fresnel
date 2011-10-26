@@ -9,11 +9,14 @@
 #include <sys/inotify.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/epoll.h>
 #include <dirent.h>
 #include <errno.h>
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
+#define NO_TIMEOUT -1
+#define SHORT_TIMEOUT 100
 
 void Indexer::addFolder(const std::string &directory)
 {
@@ -50,8 +53,8 @@ void Indexer::addFolder(const std::string &directory)
     // Fetch all indexed file instances from database
     db.getFiles(existing_files);
 
-
     int32_t path_id = db.getPathID(dir_path);
+    root_index[path_id] = true;
     if(path_id != -1) {
         // Indexed dir, scan tree for updated and new files
         watchDir(dir_path, path_id);
@@ -76,20 +79,6 @@ void Indexer::addFolder(const std::string &directory)
         Directory dir = newdir_queue.front();
         newdir_queue.pop_front();
         scanFolder(dir);
-    }
-
-    // Update all files found with updated modified dates
-    for(auto iter = update_queue.begin(); iter != update_queue.end(); ++iter) {
-        iter->update(&db);
-        ++updated;
-    }
-
-    // Add all new files found
-    for(auto iter = add_queue.begin(); iter != add_queue.end(); ++iter) {
-        if(iter->supported()) {
-            iter->insert(&db);
-            ++added;
-        }
     }
 
     // Remove all files no longer found
@@ -127,25 +116,27 @@ void Indexer::updateFolder(const Directory &dir)
     while((entity = readdir(dirstream)) != NULL) {
         std::string path = dir.path + '/' + entity->d_name;
         struct stat filestat;
-        lstat(path.c_str(), &filestat);
+        if(!statFile(path, &filestat)) {
+            // Stat failed, skip file
+            continue;
+        }
 
         if(S_ISREG(filestat.st_mode)) {
-
             std::stringstream stream;
             stream << dir.id << entity->d_name;
 
             auto result = existing_files.find(stream.str());
             if(result != existing_files.end()) {
+                // Old file, check for modifications
                 if(filestat.st_mtime > result->second.modified()) {
                     Fresnel::Debug(3) << "Updating " << path << std::endl;
                     result->second.updateInfo(filestat);
-                    update_queue.push_front(result->second);
+                    result->second.update(&db);
                 }
                 existing_files.erase(result);
             }
             else {
-                ResFile file(filestat, std::string(entity->d_name), dir.id, dir.path);
-                add_queue.push_front(file);
+                insertFile(dir.id, std::string(entity->d_name));
             }
         }
         else if(S_ISDIR(filestat.st_mode)) {
@@ -153,12 +144,14 @@ void Indexer::updateFolder(const Directory &dir)
                     (entity->d_name[1] != '.' || entity->d_name[2] != '\0'))) {
                 auto result = children.find(path);
                 if(result != children.end()) {
+                    // Old dir, update contents
                     watchDir(path, result->second);
                     Directory olddir = {path, result->second};
                     olddir_queue.push_front(olddir);
                     children.erase(result);
                 }
                 else {
+                    // New dir, do full scan
                     int32_t id = db.insertDir(path, dir.id);
                     watchDir(path, id);
                     Directory newdir = {path, id};
@@ -169,6 +162,7 @@ void Indexer::updateFolder(const Directory &dir)
     }
     closedir(dirstream);
 
+    // Remove all old dirs not found in scan
     for(auto iter = children.begin(); iter != children.end(); ++iter) {
         removed += db.dirFileCount(iter->first);
         db.removeDir(iter->second);
@@ -187,16 +181,13 @@ void Indexer::scanFolder(const Directory &dir)
     while((entity = readdir(dirstream)) != NULL) {
         std::string path = dir.path + '/' + entity->d_name;
         struct stat filestat;
-        int result = lstat(path.c_str(), &filestat);
-        if(result == -1) {
-            int error = errno;
-            Fresnel::Debug(1) << "Error #" << error << " in path: " << path << std::endl;
-            return;
+        if(!statFile(path, &filestat)) {
+            // Stat failed, skip file
+            continue;
         }
 
         if(S_ISREG(filestat.st_mode)) {
-            ResFile file(filestat, std::string(entity->d_name), dir.id, dir.path);
-            add_queue.push_front(file);
+            insertFile(dir.id, std::string(entity->d_name));
         }
         else if(S_ISDIR(filestat.st_mode)) {
             if(entity->d_name[0] != '.' || (entity->d_name[1] != '\0' &&
@@ -209,6 +200,62 @@ void Indexer::scanFolder(const Directory &dir)
         }
     }
     closedir(dirstream);
+}
+
+bool Indexer::openDir(const std::string &dir_path, DIR **dirstream)
+{
+    *dirstream = opendir(dir_path.c_str());
+    if(*dirstream == NULL) {
+        Fresnel::Debug(1) << "Path \"" << dir_path << "\"";
+        switch(errno) {
+            case ENOTDIR:
+                Fresnel::Debug(1) <<  " isn't a directory.";
+                break;
+            case ENOENT:
+                Fresnel::Debug(1) << " doesn't exist.";
+                break;
+            case EACCES:
+                Fresnel::Debug(1) << ": Access denied";
+                break;
+            default:
+                Fresnel::Debug(1) << ": Unknown error.";
+        }
+        Fresnel::Debug(1) << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool Indexer::statFile(const std::string &path, struct stat *filestat)
+{
+    int result = lstat(path.c_str(), filestat);
+    if(result == -1) {
+        switch(errno) {
+            case ENOENT:
+                Fresnel::Debug(1) << "File not found: ";
+                break;
+            case EIO:
+                Fresnel::Debug(1) << "Error reading file: ";
+                break;
+            case EACCES:
+            case ELOOP:
+            case ENAMETOOLONG:
+            case EOVERFLOW:
+            case ENOTDIR:
+                Fresnel::Debug(1) << "Unknown error reading file: ";
+        } 
+        Fresnel::Debug(1) << path << std::endl;
+        return false;
+    }
+    return true;
+}
+
+void Indexer::watchFolders()
+{
+    int status = pthread_create(&inotify_reader, NULL, &Indexer::startWatcher, this);
+    if(status != 0) {
+        Fresnel::Debug(1) << "A critical error occurred when attempting to initialize inotify thread." << std::endl;
+    }
 }
 
 bool Indexer::initInotify()
@@ -232,33 +279,223 @@ bool Indexer::initInotify()
     return true;
 }
 
-bool Indexer::openDir(const std::string &dir_path, DIR **dirstream)
+
+void Indexer::readInotify()
 {
-    *dirstream = opendir(dir_path.c_str());
-    if(dirstream == NULL) {
-        Fresnel::Debug(1) << "Path \"" << dir_path << "\"";
-        switch(errno) {
-            case ENOTDIR:
-                Fresnel::Debug(1) <<  " isn't a directory.";
-                break;
-            case ENOENT:
-                Fresnel::Debug(1) << " doesn't exist.";
-                break;
-            case EACCES:
-                Fresnel::Debug(1) << ": Access denied";
-                break;
-            default:
-                Fresnel::Debug(1) << ": Unknown error.";
+    char buffer[BUF_LEN];
+    int length, i;
+    int timeout = NO_TIMEOUT;
+
+    int efd = epoll_create1(0);
+    struct epoll_event event;
+    struct epoll_event events;
+    event.data.fd = inotify_fd;
+    event.events = EPOLLIN;
+    epoll_ctl(efd, EPOLL_CTL_ADD, inotify_fd, &event);
+
+    for(;;) {
+        int count = epoll_wait(efd, &events, 1, timeout);
+        i = 0;
+
+        if(count > 0) {
+            length = read(inotify_fd, buffer, sizeof(buffer));
+            while(i < length) {
+                struct inotify_event *event = 
+                    (struct inotify_event *) &buffer[i];
+                processIEvent(event);
+                i += EVENT_SIZE + event->len;
+            }
+            timeout = SHORT_TIMEOUT;
         }
-        Fresnel::Debug(1) << std::endl;
-        return false;
+        else {
+            // 100ms without events, so clean up orphan events and reset timeout
+            processOrphanMoves();
+            timeout = NO_TIMEOUT;
+        }
     }
-    return true;
+}
+
+void Indexer::processIEvent(struct inotify_event *event)
+{
+    bool is_dir = event->mask & IN_ISDIR;
+    if(event->mask & IN_CLOSE_WRITE) {
+        if(!is_dir) {
+            Fresnel::Debug(1) << "Inotify: " << "CLOSE_WRITE" << std::endl;
+            int32_t path_id = watch_index[event->wd];
+            std::string name = std::string(event->name);
+            int file_id = db.getFileIDByName(path_id, name);
+
+            if(file_id > 0) {
+                // Existing file, check if modified
+                if(updateFile(file_id)) {
+                    Fresnel::Debug(1) << "Inotify: " << 
+                        name << " updated." << std::endl;
+                }
+            }
+            else {
+                // New file, insert in db
+                if(insertFile(path_id, name)) {
+                    Fresnel::Debug(1) << "Inotify: " << 
+                        name << " inserted." << std::endl;
+                }
+            }
+        }
+    }
+    else if(event->mask & IN_CREATE) {
+        if(is_dir) {
+            Fresnel::Debug(1) << "Inotify: " << "CREATE" << std::endl;
+            // New dir, insert in db and watch
+            int32_t parent_id = watch_index[event->wd];
+            std::string name = std::string(event->name);
+            if(insertDir(parent_id, name)) {
+                Fresnel::Debug(1) << "Inotify: " << 
+                    name << " registered." << std::endl;
+            }
+        }
+    }
+    else if (event->mask & IN_MOVE) {
+        processMove(event);
+    }
+    else if(event->mask & IN_MOVE_SELF)
+    {
+        int32_t id = watch_index[event->wd];
+        // Only process if path is a root node
+        if(root_index.find(id) != root_index.end()) {
+            removeTree(watch_index[event->wd]);
+            root_index.erase(id);
+            Fresnel::Debug(1) << "Inotify: Root path #" << 
+                id << " removed." << std::endl;
+        }
+    }
+    else if(event->mask & IN_DELETE_SELF) {
+        Fresnel::Debug(1) << "Inotify: " << "DELETE_SELF" << std::endl;
+        int32_t id = watch_index[event->wd];
+        removeTree(id);
+        if(root_index.find(id) != root_index.end()) {
+            root_index.erase(id);
+        }
+        Fresnel::Debug(1) << "Inotify: Path #" << 
+            id << " deleted." << std::endl;
+    }
+    else if(event->mask & IN_DELETE) {
+        if(!is_dir) {
+            Fresnel::Debug(1) << "Inotify: " << "DELETE" << std::endl;
+            int32_t path_id = watch_index[event->wd];
+            std::string name = std::string(event->name);
+            int file_id = db.getFileIDByName(path_id, name);
+            ResFile file = db.getFileByID(file_id);
+            file.remove(&db);
+            Fresnel::Debug(1) << "Inotify: File " << 
+                name << " deleted." << std::endl;
+        }
+    }
+    else if(event->mask & IN_UNMOUNT) {
+        // LOG
+        Fresnel::Debug(1) << "IN_UNMOUNT" << event->name << std::endl;
+    }
+}
+
+void Indexer::processMove(struct inotify_event *event)
+{
+    Move move;
+    if(move_cache.find(event->cookie) != move_cache.end()) {
+        move = move_cache[event->cookie];
+    }
+
+    if(event->mask & IN_MOVED_FROM) {
+        move.from_id = watch_index[event->wd];
+        move.from_name = std::string(event->name);
+    }
+    else {
+        move.to_id = watch_index[event->wd];
+        move.to_name = std::string(event->name);
+    }
+
+    if(move.to_id != 0 && move.from_id != 0) {
+        if(move.is_dir)
+            movePath(event->cookie);
+        else
+            moveFile(event->cookie);
+    }
+    else {
+        move.is_dir = (event->mask & IN_ISDIR);
+        move_cache[event->cookie] = move;
+
+    }
+}
+
+void Indexer::movePath(uint32_t cookie)
+{
+    Move move = move_cache[cookie];
+    db.movePath(move.from_id, move.to_id, move.from_name, move.to_name);
+    move_cache.erase(cookie);
+    Fresnel::Debug(1) << "Inotify: Path \"" << move.from_name << 
+        "\" moved to \"" << move.to_name << "\"." << std::endl;
+}
+
+void Indexer::moveFile(uint32_t cookie)
+{
+    Move move = move_cache[cookie];
+
+    int file_id = db.getFileIDByName(move.from_id, move.from_name);
+    ResFile file = db.getFileByID(file_id);
+    file.updatePath(&db, move.to_id, move.to_name);
+
+    move_cache.erase(cookie);
+    Fresnel::Debug(1) << "Inotify: File \"" << move.from_name << 
+        "\" moved to \"" << move.to_name << "\"." << std::endl;
+}
+
+void Indexer::processOrphanMoves()
+{
+    Move move;
+    for(auto iter = move_cache.begin(); iter != move_cache.end(); iter++) {
+        move = iter->second;
+        if(move.is_dir) {
+            if(move.from_id == 0) {
+                // Dir moved into tree
+                insertDir(move.to_id, move.to_name);
+                Fresnel::Debug(1) << "Inotify: Path " << 
+                    move.to_name << " moved in." << std::endl;
+            }
+            else {
+                // Dir moved out of tree
+                int32_t id = db.getPathIDByName(move.from_id, move.from_name);
+                removeTree(id);
+                Fresnel::Debug(1) << "Inotify: Path " << 
+                    move.from_name << " moved out." << std::endl;
+            }
+        }
+        else {
+            if(move.from_id == 0) {
+                // File moved into tree
+                insertFile(move.to_id, move.to_name);
+                Fresnel::Debug(1) << "Inotify: File " << 
+                    move.to_name << " moved in." << std::endl;
+            }
+            else {
+                // File moved out of tree
+                int32_t id = db.getFileIDByName(move.from_id, move.from_name);
+                ResFile file = db.getFileByID(id);
+                file.remove(&db);
+                Fresnel::Debug(1) << "Inotify: file " << 
+                    move.from_name << " moved out." << std::endl;
+            }
+        }
+    }
+
+    move_cache.clear();
 }
 
 void Indexer::watchDir(const std::string &path, int32_t path_id)
 {
-    int descriptor = inotify_add_watch(inotify_fd, path.c_str(), IN_MOVE|IN_CLOSE_WRITE|IN_DELETE|IN_CREATE);
+    if(inotify_fd < 1) {
+        if(!initInotify())
+            return;
+    }
+
+    int descriptor = inotify_add_watch(inotify_fd, path.c_str(), 
+            IN_CREATE|IN_MOVE|IN_CLOSE_WRITE|IN_DELETE|IN_DELETE_SELF|IN_MOVE_SELF|IN_UNMOUNT);
     if(descriptor == -1) {
         Fresnel::Debug(1) << "Error adding watch: ";
         switch(errno) {
@@ -274,77 +511,90 @@ void Indexer::watchDir(const std::string &path, int32_t path_id)
             case EINVAL:
                 Fresnel::Debug(1) << "The given event mask contains no legal events; or fd is not an inotify file descriptor.";
                 break;
+            case ENOENT:
+                Fresnel::Debug(1) << "A directory component in pathname does not exist or is a dangling symbolic link.";
+                break;
             case ENOMEM:
                 Fresnel::Debug(1) << "Insufficient kernel memory was available.";
                 break;
             case ENOSPC:
                 Fresnel::Debug(1) << "The user limit on the total number of inotify watches was reached or the kernel failed to allocate a needed resource.";
+                break;
         }
         Fresnel::Debug(1) << std::endl;
     }
     else {
+        watch_index[descriptor] = path_id;
         watch_index[path_id] = descriptor;
     }
 }
 
-int Indexer::getInotifyFD()
+void* Indexer::startWatcher(void *pointer)
 {
-    return inotify_fd;
+    Indexer *indexer = static_cast<Indexer*>(pointer);
+    indexer->readInotify();
+    return 0;
 }
 
-void* Indexer::readInotify(void *indexer_pointer)
+
+bool Indexer::insertFile(int32_t path_id, const std::string &name)
 {
-    Indexer *indexer = static_cast<Indexer*>(indexer_pointer);
-    int inotify_fd = indexer->getInotifyFD();
-    //int fdsize = sizeof(inotify_fd) + 1;
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(inotify_fd, &rfds);
-    //struct timeval timeout; 
-    //timeout.tv_sec = 1;
-    char buffer[BUF_LEN];
-    int length, i;
-
-    //int result = 0;
-    while(1) {
-        //result = select(fdsize, &rfds, NULL, NULL, NULL);
-
-        while(1) {//result > 0) {
-            length = read(inotify_fd, buffer, BUF_LEN);
-            i = 0;
-            while(i < length) {
-                 struct inotify_event *event = (struct inotify_event *) &buffer[i];
-                 if(event->len) {
-                     if(event->mask & IN_CREATE) {
-                         Fresnel::Debug(1) << "IN_CREATE: " << event->name << std::endl;
-                     }
-                     else if (event->mask & IN_MOVED_FROM) {
-                         Fresnel::Debug(1) << "IN_MOVED_FROM:" << event->name << std::endl;
-                     }
-                     else if(event->mask & IN_MOVED_TO) {
-                         Fresnel::Debug(1) << "IN_MOVED_TO" << event->name << std::endl;
-                     }
-                     else if(event->mask & IN_DELETE) {
-                         Fresnel::Debug(1) << "IN_DELETE" << event->name << std::endl;
-                     }
-                     else if(event->mask & IN_CLOSE_WRITE) {
-                         Fresnel::Debug(1) << "IN_CLOSE_WRITE" << event->name << std::endl;
-                     }
-                 }
-                 i += EVENT_SIZE + event->len;
-            }
-
-            //result = select(fdsize, &rfds, NULL, NULL, &timeout);
+    struct stat filestat;
+    std::string path = db.getPathByID(path_id);
+    if(statFile(path + '/' + name, &filestat)) {
+        ResFile file = ResFile(filestat, name, path_id, path);
+        if(file.supported()) {
+            file.insert(&db);
+            return true;
         }
     }
-    return NULL;
+    return false;
 }
 
-void Indexer::startWatcher()
+bool Indexer::insertDir(int32_t parent_id, const std::string &name)
 {
-    int status = pthread_create(&inotify_reader, NULL, &Indexer::readInotify, this); 
-    if(status != 0) {
-        Fresnel::Debug(1) << "A critical error occurred when attempting to initialize inotify thread." << std::endl;
-    }
+    std::string parent_path = db.getPathByID(parent_id);
+    std::string dir_path = parent_path + '/' + name;
+
+    int32_t path_id = db.insertDir(dir_path, parent_id);
+    watchDir(dir_path, path_id);
+    Directory dir = {dir_path, path_id}; 
+    scanFolder(dir);
+    return true;
 }
 
+void Indexer::removeTree(int32_t root_id)
+{
+    int path_id;
+
+    std::list<int32_t> paths;
+    paths.push_back(root_id);
+    while(paths.size() > 0) {
+        path_id = paths.front();
+        paths.pop_front();
+        std::list<int32_t> sublist = db.getSubPaths(path_id);
+        paths.splice(paths.end(), sublist);
+        inotify_rm_watch(inotify_fd, reverse_watch_index[path_id]);
+
+        watch_index.erase(reverse_watch_index[path_id]);
+        reverse_watch_index.erase(path_id);
+    }
+    // Recursive remove
+    db.removeDir(root_id);
+}
+
+
+bool Indexer::updateFile(int32_t file_id)
+{
+    struct stat filestat;
+    ResFile file = db.getFileByID(file_id);
+    std::string path = file.path() + '/' + file.name();
+    if(statFile(path, &filestat)) {
+        if(filestat.st_mtime > file.modified()) {
+            file.updateInfo(filestat);
+            file.update(&db);
+            return true;
+        }
+    }
+    return false;
+}

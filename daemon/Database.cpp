@@ -194,7 +194,7 @@ int Database::insertDir(const std::string &path, int parent)
 
 bool Database::removeDir(int id)
 {
-    // TODO: Child directories are *not* removed due to possible recursive limitations of sqlite
+    // Recursive trigger-delete, 1000 depth limit
     query("DELETE FROM path WHERE path_id=?");
     bindInt(id);
     if(step())
@@ -236,6 +236,17 @@ void Database::removeFile(int id)
     return;
 }
 
+void Database::moveFile(int32_t file_id, int32_t path_id, const std::string &name)
+{
+    query("UPDATE resource SET path_id=?, filename=? WHERE id=?");
+
+    bindInt(path_id);
+    bindString(name);
+    bindInt(file_id);
+
+    step();
+}
+
 int Database::getPathID(const std::string &path)
 {
     query ("SELECT path_id FROM path WHERE path=?");
@@ -246,6 +257,59 @@ int Database::getPathID(const std::string &path)
         return getInt();
     else
         return -1;
+}
+
+int Database::getFileIDByName(int path_id, const std::string &filename)
+{
+    query("SELECT id FROM resource WHERE path_id=? AND filename=?");
+
+    bindInt(path_id);
+    bindString(filename);
+
+    if(step())
+        return getInt();
+    else
+        return -1;
+}
+
+int32_t Database::getPathIDByName(int32_t path_id, const std::string &name)
+{
+    query("SELECT path_id FROM path WHERE path=?");
+
+    std::string path = getPathByID(path_id) + '/' + name;
+    bindString(path);
+
+    if(step())
+        return getInt();
+    else
+        return -1;
+}
+
+std::string Database::getPathByID(int id)
+{
+    query("SELECT path FROM path WHERE path_id=?");
+
+    bindInt(id);
+
+    std::string path = "";
+    if(step())
+        path = getString();
+
+    return path;
+}
+
+void Database::movePath(int32_t from_id, int32_t to_id, const std::string &from_name, const std::string &to_name)
+{
+    std::string to_path = getPathByID(to_id) + '/' + to_name;
+    std::string from_path = getPathByID(from_id) + '/' + from_name;
+
+    query("UPDATE path SET path=?, parent=? WHERE path=?");
+
+    bindString(to_path);
+    bindInt(to_id);
+    bindString(from_path);
+
+    step();
 }
 
 int Database::dirFileCount(const std::string &path)
@@ -271,26 +335,41 @@ std::map<std::string, int> Database::getPathChildren(int32_t id)
     return paths;
 }
 
+std::list<int> Database::getSubPaths(int id)
+{
+    query("SELECT path_id FROM path WHERE parent=?");
+
+    bindInt(id);
+
+    std::list<int> paths;
+    while(step()) {
+        paths.push_back(getInt());
+    }
+
+    return paths;
+}
+
 
 void Database::getFiles(std::map<std::string, ResFile> &files)
 {
-    query("SELECT (path_id || filename) as key, type, path, id, modified, path_id FROM resource JOIN path USING(path_id)");
+    query("SELECT (path_id || filename) as key, type, path, filename, id, modified, path_id FROM resource JOIN path USING(path_id)");
 
     while(step()) {
         std::string key = getString();
         int type = getInt();
         std::string path = getString();
+        std::string filename = getString();
         int id = getInt();
         time_t modified(getInt64());
         int32_t path_id = getInt();
 
-        files[key] = ResFile(id, modified, path_id, path, type);
+        files[key] = ResFile(id, modified, path_id, path, filename, type);
     }
 }
 
-/*ResFile Database::getFile(int id)
+ResFile Database::getFileByID(int id)
 {
-    query("SELECT path, path.path_id, filename, size, modified, type FROM resource JOIN path USING path_id WHERE id=?");
+    query("SELECT path, path.path_id, modified, filename, type FROM resource JOIN path USING (path_id) WHERE id=?");
     bindInt(id);
 
     if(!step()) {
@@ -298,15 +377,14 @@ void Database::getFiles(std::map<std::string, ResFile> &files)
     }
 
     std::string path = getString();
-    int pathId = getInt();
-    std::string filename = getString();
-    int size = getInt();
+    int path_id = getInt();
     std::time_t modified(getInt());
+    std::string filename = getString();
     int type = getInt();
 
-    ResFile file(id, pathId, path, filename, size, modified, type);
+    ResFile file(id, modified, path_id, path, filename, type);
     return file;
-}*/
+}
 
 bool Database::createTables()
 {
@@ -356,6 +434,15 @@ bool Database::createTables()
         id INTEGER PRIMARY KEY REFERENCES resource(id), \
         title TEXT)";
 
+    std::string pathUpdateTrigger = "CREATE TRIGGER Path_CascadeUpdate \
+        AFTER UPDATE ON path \
+        FOR EACH ROW \
+        BEGIN \
+            UPDATE path \
+            SET path=replace(path, OLD.path, NEW.path) \
+            WHERE parent=OLD.path_id; \
+        END;";
+
     std::string pathTrigger = "CREATE TRIGGER Path_CascadeDelete \
         AFTER DELETE ON path \
         FOR EACH ROW \
@@ -380,6 +467,7 @@ bool Database::createTables()
             WHERE id = OLD.id; \
         END;";
 
+
     insert(path);
     insert(resource);
     insert(type);
@@ -389,6 +477,7 @@ bool Database::createTables()
     insert(artist);
     insert(image);
 
+    insert(pathUpdateTrigger);
     insert(pathTrigger);
     insert(resAudioTrigger);
     insert(resImageTrigger);

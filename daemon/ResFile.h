@@ -12,14 +12,15 @@ class ResFile {
     public:
         ResFile() {}
         ResFile(const struct stat &fileinfo, const std::string &name, int32_t path_id, const std::string &path);
-        ResFile(int32_t id, time_t modified, int32_t path_id, std::string path, int type)
-            : _id(id), _modified(modified), _path_id(path_id), _type(type), _path(path)
+        ResFile(int32_t id, time_t modified, int32_t path_id, std::string path, std::string name, int type)
+            : _name(name), _id(id), _modified(modified), _path_id(path_id), _type(type), _path(path)
             {}
         ~ResFile() {};
 
         bool supported();
         void update(Database* db);
         void updateInfo(const struct stat &fileinfo);
+        void updatePath(Database* db, int path_id, const std::string &name);
         void insert(Database* db);
         void remove(Database* db);
 

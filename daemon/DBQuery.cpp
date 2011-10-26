@@ -117,7 +117,7 @@ void DBQuery::fetchM3UAlbum(std::string album)
          JOIN artist I ON T.artist=I.id \
          WHERE type=0 \
          AND A.title LIKE ? \
-         ORDER BY A.title, R.path_id, tracknumber ASC");
+         ORDER BY A.title, R.path_id, R.filename ASC");
 
     bindString("%" + album + "%");
 
@@ -251,7 +251,7 @@ std::string DBQuery::processM3U()
         int length = getInt();
 
         output << "#EXTINF:" << length << "," << artist << " - " << title << std::endl;
-        output << "http://129.241.122.115:9996/resource/" << id << "/" << tracknumber << ".ogg" <<  std::endl << std::endl;
+        output << "http://192.168.0.195:9996/resource/" << id << "/" << tracknumber << ".ogg" <<  std::endl << std::endl;
 
     } while(step());
     return output.str();

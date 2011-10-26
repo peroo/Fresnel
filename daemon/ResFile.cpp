@@ -72,6 +72,14 @@ void ResFile::update(Database* db)
     }
 }
 
+void ResFile::updatePath(Database* db, int path_id, const std::string &name)
+{
+    _path_id = path_id;
+    _name = name;
+    db->moveFile(_id, _path_id, name);
+    _path = db->getPathByID(_path_id);
+}
+
 void ResFile::insert(Database* db)
 {
     switch(_type) {

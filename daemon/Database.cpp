@@ -389,14 +389,19 @@ ResFile Database::getFileByID(int id)
 bool Database::createTables()
 {
     // TODO: Remove "IF NOT EXISTS" in favour of proper db checking
+    std::string root = "CREATE TABLE IF NOT EXISTS root ( \
+        root_id INTEGER PRIMARY KEY, \
+        path TEXT NOT NULL)";
+
     std::string path = "CREATE TABLE IF NOT EXISTS path ( \
         path_id INTEGER PRIMARY KEY, \
         path TEXT NOT NULL, \
-        parent INTEGER)";
+        FOREIGN KEY(parent) REFERENCES path(path_id) ON DELETE CASCADE, \
+        FOREIGN KEY(root_id) REFERENCES root(root_id) ON DELETE CASCADE)";
 
     std::string resource = "CREATE TABLE IF NOT EXISTS resource ( \
         id INTEGER PRIMARY KEY, \
-        path_id INTEGER REFERENCES path(path_id), \
+        FOREIGN KEY(path_id) REFERENCES path(path_id) ON DELETE CASCADE, \
         filename TEXT, \
         size INTEGER, \
         type INTEGER, \
@@ -439,24 +444,8 @@ bool Database::createTables()
         FOR EACH ROW \
         BEGIN \
             UPDATE path \
-            SET path=replace(path, OLD.path, NEW.path) \
+            SET path = (NEW.path || substr(path, length(OLD.path) + 1)) \
             WHERE parent=OLD.path_id; \
-        END;";
-
-    std::string pathCascadingDeleteTrigger = "CREATE TRIGGER Path_CascadeDelete \
-        AFTER DELETE ON path \
-        FOR EACH ROW \
-        BEGIN \
-            DELETE FROM path \
-            WHERE parent=OLD.path_id; \
-        END;";
-
-    std::string pathResourceDeleteTrigger= "CREATE TRIGGER Path_ResourceDelete \
-        AFTER DELETE ON path \
-        FOR EACH ROW \
-        BEGIN \
-            DELETE FROM resource \
-            WHERE path_id = OLD.path_id; \
         END;";
 
     std::string audioDeleteTrigger = "CREATE TRIGGER Resource_CascadeDelete \
@@ -475,6 +464,7 @@ bool Database::createTables()
             WHERE id = OLD.id; \
         END;";
 
+    insert(root);
     insert(path);
     insert(resource);
     insert(type);
@@ -485,8 +475,6 @@ bool Database::createTables()
     insert(image);
 
     insert(pathUpdateTrigger);
-    insert(pathCascadingDeleteTrigger);
-    insert(pathResourceDeleteTrigger);
     insert(audioDeleteTrigger);
     insert(imageDeleteTrigger);
 

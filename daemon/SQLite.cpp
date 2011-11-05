@@ -5,33 +5,31 @@
 #include <iostream>
 #include <string>
 #include <map>
-#include <memory>
 #include <assert.h>
 
 SQLite::~SQLite() {
-    if(iter != statements.end()) {
-        sqlite3_finalize(*iter);
+    for(auto iter = statements.begin(); iter != statements.end(); iter++) {
+        sqlite3_finalize(iter->second);
     }
     sqlite3_close(db);
 }
 
 void SQLite::init()
 {
+    std::string filename = "db.sqlite";
     int result = sqlite3_open_v2(
-            "db.sqlite",
+            filename.c_str(),
             &db, 
-            SQLITE_OPEN_NOMUTEX
+            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |  SQLITE_OPEN_NOMUTEX,
+            NULL
     );
     if(result != SQLITE_OK) {
         throw("sqlite error");
     }
 
-    query("PRAGMA foreign_keys = true;");
-    step();
-    query("PRAGMA journal_mode=WAL;");
-    step();
-    query("PRAGMA synchronous=NORMAL;");
-    step();
+    insert("PRAGMA foreign_keys = true;");
+    insert("PRAGMA journal_mode=WAL;");
+    insert("PRAGMA synchronous=NORMAL;");
 }
 
 void SQLite::query(const std::string &query)
@@ -75,6 +73,11 @@ void SQLite::bindString(const std::string &value)
 {
     int result = sqlite3_bind_text(statement, ++paramIndex, value.c_str(), 
                                     value.size(), SQLITE_STATIC);
+    assert(result == SQLITE_OK);
+}
+void SQLite::bindNull()
+{
+    int result = sqlite3_bind_null(statement, ++paramIndex);
     assert(result == SQLITE_OK);
 }
 int SQLite::getInt()

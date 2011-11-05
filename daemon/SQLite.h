@@ -22,6 +22,7 @@ class SQLite {
         void            bindInt(int value);
         void            bindInt64(uint64_t value);
         void            bindString(const std::string &value);
+        void            bindNull();
         int             getInt();
         uint64_t        getInt64();
         double          getFloat();

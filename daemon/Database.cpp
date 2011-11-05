@@ -341,10 +341,13 @@ void Database::movePath(int32_t from_id, int32_t to_id, const std::string &from_
     std::string to_path = getPathByID(to_id) + '/' + to_name;
     std::string from_path = getPathByID(from_id) + '/' + from_name;
 
-    query("UPDATE path SET path=?, parent=? WHERE path=?");
+    int32_t root_id = getRootByPathID(to_id);
+
+    query("UPDATE path SET path=?, parent=?, root_id=? WHERE path=?");
 
     bindString(to_path);
     bindInt(to_id);
+    bindInt(root_id);
     bindString(from_path);
 
     step();
@@ -494,7 +497,8 @@ bool Database::createTables()
         FOR EACH ROW \
         BEGIN \
             UPDATE path \
-            SET path = (NEW.path || substr(path, length(OLD.path) + 1)) \
+            SET root_id=NEW.root_id, \
+            path = (NEW.path || substr(path, length(OLD.path) + 1)) \
             WHERE parent=OLD.path_id; \
         END;";
 

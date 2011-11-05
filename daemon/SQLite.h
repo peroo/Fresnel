@@ -3,15 +3,16 @@
 
 #include <string>
 #include <map>
+#include <memory>
 
 struct sqlite3;
 struct sqlite3_stmt;
 
 class SQLite {
     public:
-        SQLite() : used(false) {}
+        SQLite();
         ~SQLite();
-        static bool selectDB(const std::string &filename);
+        void            init();
     protected:
         void            insert(const std::string &query);
         void            query(const std::string &query);
@@ -30,12 +31,11 @@ class SQLite {
         int             ColType(int index);
         std::string     ColName(int index);
     private:
-        static sqlite3 *db;
+        std::unique_ptr<sqlite3*> db;
         std::map<std::string, sqlite3_stmt*> statements;
         sqlite3_stmt *statement;
         int paramIndex;
         int colIndex;
-        bool used;
 };
 
 #endif

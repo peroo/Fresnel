@@ -155,10 +155,11 @@ int main(int argc, char *argv[])
     Fresnel fresnel = Fresnel();
     fresnel.init();
 
-    Indexer index = Indexer();
-    //index.addFolder("/home/peroo/raid/Music/inc/Flac/");
-    index.addFolder("/home/peroo/raid/Music/lol/");
-    index.watchFolders();
+    Indexer indexer = Indexer();
+    indexer.init();
+    indexer.addFolder("/home/peroo/raid/Music/inc/Flac/");
+    indexer.addFolder("/home/peroo/raid/Music/Unchecked/");
+    indexer.watchFolders();
 
     while(1) {
         sleep(600);

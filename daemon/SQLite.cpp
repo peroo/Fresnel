@@ -5,16 +5,33 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <memory>
 #include <assert.h>
 
-sqlite3 *SQLite::db;
-
 SQLite::~SQLite() {
+    if(iter != statements.end()) {
+        sqlite3_finalize(*iter);
+    }
+    sqlite3_close(db);
 }
 
-bool SQLite::selectDB(const std::string &filename)
+void SQLite::init()
 {
-    return sqlite3_open(filename.c_str(), &db) == SQLITE_OK;
+    int result = sqlite3_open_v2(
+            "db.sqlite",
+            &db, 
+            SQLITE_OPEN_NOMUTEX
+    );
+    if(result != SQLITE_OK) {
+        throw("sqlite error");
+    }
+
+    query("PRAGMA foreign_keys = true;");
+    step();
+    query("PRAGMA journal_mode=WAL;");
+    step();
+    query("PRAGMA synchronous=NORMAL;");
+    step();
 }
 
 void SQLite::query(const std::string &query)

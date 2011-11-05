@@ -116,11 +116,6 @@ bool Fresnel::init() {
     }
 	chdir(base.c_str());
 
-	// Init SQLite
-    if(!SQLite::selectDB("db.sqlite")) {
-        std::cout << "SQL initialization failed." << std::endl;
-        return false;
-	}
     Database db = Database();
     db.createTables();
 

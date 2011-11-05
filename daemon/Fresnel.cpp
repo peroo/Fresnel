@@ -36,6 +36,7 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
 
     if(req->module == RESOURCE) {
         Database db = Database();
+        db.init();
         Resource *res = NULL;
 
         int id = atoi(req->object.c_str());
@@ -59,6 +60,7 @@ int requestCurrier(void *cls, struct MHD_Connection *connection, const char *url
     }
     else if(req->module == DATA) {
         DBQuery query = DBQuery(req);
+        query.init();
         query.parse();
     }
     else if(req->module == STATIC_FILE) {
@@ -117,6 +119,7 @@ bool Fresnel::init() {
 	chdir(base.c_str());
 
     Database db = Database();
+    db.init();
     db.createTables();
 
 	// Init MHD

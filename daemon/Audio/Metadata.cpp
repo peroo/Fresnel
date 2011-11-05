@@ -47,6 +47,7 @@ bool Metadata::loaded()
 bool Metadata::fetchData(int index)
 {
     Database db;
+    db.init();
     std::string path(db.getResourcePath(index));
     loadData(path);
 

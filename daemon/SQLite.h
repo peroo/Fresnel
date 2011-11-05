@@ -10,10 +10,10 @@ struct sqlite3_stmt;
 
 class SQLite {
     public:
-        SQLite();
-        ~SQLite();
         void            init();
     protected:
+        SQLite() {}
+        ~SQLite();
         void            insert(const std::string &query);
         void            query(const std::string &query);
         bool            step();
@@ -31,7 +31,7 @@ class SQLite {
         int             ColType(int index);
         std::string     ColName(int index);
     private:
-        std::unique_ptr<sqlite3*> db;
+        sqlite3 *db;
         std::map<std::string, sqlite3_stmt*> statements;
         sqlite3_stmt *statement;
         int paramIndex;

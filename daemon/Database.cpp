@@ -451,7 +451,7 @@ bool Database::createTables()
             WHERE parent=OLD.path_id; \
         END;";
 
-    std::string audioDeleteTrigger = "CREATE TRIGGER Resource_CascadeDelete \
+    std::string audioDeleteTrigger = "CREATE TRIGGER Audio_CascadeDelete \
         AFTER DELETE ON resource \
         FOR EACH ROW \
         BEGIN \
@@ -459,7 +459,7 @@ bool Database::createTables()
             WHERE id = OLD.id; \
         END;";
 
-    std::string imageDeleteTrigger = "CREATE TRIGGER Resource_CascadeDelete \
+    std::string imageDeleteTrigger = "CREATE TRIGGER Image_CascadeDelete \
         AFTER DELETE ON resource \
         FOR EACH ROW \
         BEGIN \

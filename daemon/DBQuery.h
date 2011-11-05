@@ -6,7 +6,7 @@
 
 class HttpRequest;
 
-class DBQuery : SQLite {
+class DBQuery : public SQLite {
     public:
         DBQuery(HttpRequest *_req) : req(_req) {}
         ~DBQuery() {}

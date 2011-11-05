@@ -53,6 +53,7 @@ Resource* Resource::init(int index)
     indexed = true;
 
     Database db = Database();
+    db.init();
     path = db.getResourcePath(index);
     readExtension();
 

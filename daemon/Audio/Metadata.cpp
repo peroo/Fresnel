@@ -13,7 +13,7 @@ bool Metadata::loadData(std::string path)
     }
 
     if(ext == "flac") {
-        TagLib::FLAC::File flac(path.c_str(), true);
+        TagLib::FLAC::File flac(path.c_str(), true, TagLib::AudioProperties::ReadStyle::Fast);
         if(!parseXiphComment(flac.xiphComment(false))) {
             if(!parseId3v2(flac.ID3v2Tag(false))) {
                 parseId3v1(flac.ID3v1Tag(true));

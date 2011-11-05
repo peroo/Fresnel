@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <assert.h>
 
 std::map<std::string, int> Database::artistCache;
 std::map<std::string, int> Database::albumCache;
@@ -180,12 +181,26 @@ void Database::updateImage(ResFile *file)
     return;
 }
 
-int Database::insertDir(const std::string &path, int parent)
+int Database::insertRoot(const std::string &path)
 {
-    query("INSERT INTO path (path, parent) VALUES (?, ?)");
+    query("INSERT INTO root (path) VALUES (?)");
 
     bindString(path);
-    bindInt(parent);
+    step();
+
+    return last_insert_id();
+}
+
+int Database::insertPath(const std::string &path, int32_t parent, int32_t root)
+{
+    query("INSERT INTO path (path, parent, root_id) VALUES (?, ?, ?)");
+
+    bindString(path);
+    if(parent == 0)
+        bindNull();
+    else 
+        bindInt(parent);
+    bindInt(root);
 
     step();
 
@@ -234,6 +249,29 @@ void Database::removeFile(int id)
     bindInt(id);
     step();
     return;
+}
+
+int Database::getRootID(const std::string &path)
+{
+    query ("SELECT root_id FROM root WHERE path=?");
+
+    bindString(path);
+
+    if(step())
+        return getInt();
+    else
+        return -1;
+}
+
+int Database::getRootByPathID(int32_t path_id)
+{
+    query("SELECT root_id FROM path WHERE path_id=?");
+
+    bindInt(path_id);
+
+    assert(step());
+
+    return getInt();
 }
 
 void Database::moveFile(int32_t file_id, int32_t path_id, const std::string &name)
@@ -350,9 +388,16 @@ std::list<int> Database::getSubPaths(int id)
 }
 
 
-void Database::getFiles(std::map<std::string, ResFile> &files)
+std::map<std::string, ResFile> Database::getFilesByRoot(int32_t root_id)
 {
-    query("SELECT (path_id || filename) as key, type, path, filename, id, modified, path_id FROM resource JOIN path USING(path_id)");
+    query("SELECT (path_id || filename) as key, \
+            type, path, filename, id, modified, path_id \
+            FROM resource JOIN path USING(path_id) \
+            WHERE root_id = ?");
+
+    bindInt(root_id);
+
+    std::map<std::string, ResFile> files;
 
     while(step()) {
         std::string key = getString();
@@ -365,6 +410,8 @@ void Database::getFiles(std::map<std::string, ResFile> &files)
 
         files[key] = ResFile(id, modified, path_id, path, filename, type);
     }
+
+    return files;
 }
 
 ResFile Database::getFileByID(int id)

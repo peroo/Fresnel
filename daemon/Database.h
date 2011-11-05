@@ -9,15 +9,18 @@
 #include <list>
 
 
-class Database : SQLite {
+class Database : public SQLite {
     public:
         Database() {}
         ~Database() {};
 
         bool createTables();
-        int insertDir(const std::string &path, int parent);
+        int insertRoot(const std::string &path);
+        int insertPath(const std::string &path, int32_t parent, int32_t root);
         bool removeDir(int id);
         int getResourceType(int id);
+        int getRootID(const std::string &path);
+        int getRootByPathID(int32_t path_id);
         int getPathID(const std::string &path);
         std::string getPathByID(int id);
         int dirFileCount(const std::string &path);
@@ -36,8 +39,8 @@ class Database : SQLite {
         void commitTransaction();
 
         ResFile getFileByID(int id);
-        void getFiles(std::map<std::string, ResFile> &files);
         std::string getResourcePath(int id);
+        std::map<std::string, ResFile> getFilesByRoot(int32_t root_id);
         std::map<std::string, int> getPathChildren(int index);
         std::list<int> getSubPaths(int id);
 

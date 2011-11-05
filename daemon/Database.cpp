@@ -396,17 +396,20 @@ bool Database::createTables()
     std::string path = "CREATE TABLE IF NOT EXISTS path ( \
         path_id INTEGER PRIMARY KEY, \
         path TEXT NOT NULL, \
+        parent INTEGER, \
+        root_id INTEGER, \
         FOREIGN KEY(parent) REFERENCES path(path_id) ON DELETE CASCADE, \
         FOREIGN KEY(root_id) REFERENCES root(root_id) ON DELETE CASCADE)";
 
     std::string resource = "CREATE TABLE IF NOT EXISTS resource ( \
         id INTEGER PRIMARY KEY, \
-        FOREIGN KEY(path_id) REFERENCES path(path_id) ON DELETE CASCADE, \
+        path_id INTEGER, \
         filename TEXT, \
         size INTEGER, \
         type INTEGER, \
         hash TEXT, \
-        modified INTEGER)";
+        modified INTEGER, \
+        FOREIGN KEY(path_id) REFERENCES path(path_id) ON DELETE CASCADE)";
 
     std::string type = "CREATE TABLE IF NOT EXISTS type ( \
         id INTEGER PRIMARY KEY, \

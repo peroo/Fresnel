@@ -46,6 +46,9 @@ set(LIBS ${LIBS} ${MHD})
 find_library(XSPF xspf)
 set(LIBS ${LIBS} ${XSPF})
 
+FIND_library(MINIUPNPC miniupnpc)
+set(LIBS ${LIBS} ${LIBS} ${MINIUPNPC})
+
 # additional compiler flags
 add_definitions(-Wall -Wextra -pedantic -Werror -std=c++0x -D_FILE_OFFSET_BITS=64 -D_BSD_SOURCE)
 

@@ -6,6 +6,7 @@
 #include "Audio/Audio.h"
 #include "Image/Image.h"
 #include "Indexer.h"
+#include "PortForwarder.h"
 
 #include <sqlite3.h>
 #include <microhttpd.h>
@@ -152,14 +153,21 @@ int main(int argc, char *argv[])
     (void) argc;
     (void) argv;
 
+    srand(time(0));
+
     Fresnel fresnel = Fresnel();
     fresnel.init();
 
     Indexer indexer = Indexer();
     indexer.init();
-    indexer.addFolder("/home/peroo/raid/Music/inc/Flac/");
+    indexer.addFolder("/home/peroo/raid/Music/Flac/");
     indexer.addFolder("/home/peroo/raid/Music/Unchecked/");
+    //indexer.addFolder("/home/peroo/asd/");
     indexer.watchFolders();
+
+    PortForwarder fwd = PortForwarder();
+    fwd.init(2000);
+    fwd.add(9996);
 
     while(1) {
         sleep(600);
